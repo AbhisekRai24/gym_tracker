@@ -78,7 +78,8 @@ class WorkoutDetailScreen extends ConsumerWidget {
               final exercise = await Navigator.push<String>(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const ExercisePickerScreen(),
+                  builder: (context) =>
+                      ExercisePickerScreen(workoutId: workoutId),
                 ),
               );
 

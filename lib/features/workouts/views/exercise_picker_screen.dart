@@ -2,9 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../viewmodels/exercise_viewmodel.dart';
+import 'exercise_detail_screen.dart';
 
 class ExercisePickerScreen extends ConsumerStatefulWidget {
-  const ExercisePickerScreen({super.key});
+  final String workoutId;
+
+  const ExercisePickerScreen({
+    super.key,
+    required this.workoutId,
+  });
 
   @override
   ConsumerState<ExercisePickerScreen> createState() =>
@@ -117,9 +123,22 @@ class _ExercisePickerScreenState extends ConsumerState<ExercisePickerScreen> {
                     subtitle: Text(
                       '${exercise.muscleGroup} • ${exercise.equipment}',
                     ),
-                    trailing: const Icon(Icons.add),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.add),
+                      onPressed: () {
+                        Navigator.pop(context, exercise.name);
+                      },
+                    ),
                     onTap: () {
-                      Navigator.pop(context, exercise.name);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ExerciseDetailScreen(
+  exercise: exercise,
+  workoutId: widget.workoutId,
+),
+                        ),
+                      );
                     },
                   ),
                 );
