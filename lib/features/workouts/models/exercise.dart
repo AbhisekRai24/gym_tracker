@@ -1,0 +1,13 @@
+class Exercise {
+  final String id;
+  final String name;
+  final String muscleGroup;
+  final String equipment;
+
+  const Exercise({
+    required this.id,
+    required this.name,
+    required this.muscleGroup,
+    required this.equipment,
+  });
+}

@@ -1,30 +1,31 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class ExercisePickerScreen extends StatefulWidget {
+import '../viewmodels/exercise_viewmodel.dart';
+
+class ExercisePickerScreen extends ConsumerStatefulWidget {
   const ExercisePickerScreen({super.key});
 
   @override
-  State<ExercisePickerScreen> createState() => _ExercisePickerScreenState();
+  ConsumerState<ExercisePickerScreen> createState() =>
+      _ExercisePickerScreenState();
 }
 
-class _ExercisePickerScreenState extends State<ExercisePickerScreen> {
+class _ExercisePickerScreenState extends ConsumerState<ExercisePickerScreen> {
   final TextEditingController _searchController = TextEditingController();
 
-  static const List<String> exercises = [
-    'Bench Press',
-    'Incline Dumbbell Press',
-    'Cable Fly',
-    'Shoulder Press',
-    'Lateral Raise',
-    'Tricep Pushdown',
-    'Barbell Row',
-    'Lat Pulldown',
-    'Barbell Squat',
-    'Leg Press',
-    'Romanian Deadlift',
-  ];
-
   String _searchQuery = '';
+
+  String _selectedMuscleGroup = 'All';
+
+  static const List<String> muscleGroups = [
+    'All',
+    'Chest',
+    'Back',
+    'Shoulders',
+    'Triceps',
+    'Legs',
+  ];
 
   @override
   void initState() {
@@ -45,8 +46,16 @@ class _ExercisePickerScreenState extends State<ExercisePickerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final exercises = ref.watch(exerciseViewModelProvider);
+
     final filteredExercises = exercises.where((exercise) {
-      return exercise.toLowerCase().contains(_searchQuery);
+      final matchesSearch = exercise.name.toLowerCase().contains(_searchQuery);
+
+      final matchesMuscleGroup =
+          _selectedMuscleGroup == 'All' ||
+          exercise.muscleGroup == _selectedMuscleGroup;
+
+      return matchesSearch && matchesMuscleGroup;
     }).toList();
 
     return Scaffold(
@@ -64,6 +73,30 @@ class _ExercisePickerScreenState extends State<ExercisePickerScreen> {
               ),
             ),
           ),
+          SizedBox(
+            height: 48,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: muscleGroups.length,
+              itemBuilder: (context, index) {
+                final group = muscleGroups[index];
+
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: ChoiceChip(
+                    label: Text(group),
+                    selected: _selectedMuscleGroup == group,
+                    onSelected: (_) {
+                      setState(() {
+                        _selectedMuscleGroup = group;
+                      });
+                    },
+                  ),
+                );
+              },
+            ),
+          ),
 
           Expanded(
             child: ListView.builder(
@@ -78,12 +111,15 @@ class _ExercisePickerScreenState extends State<ExercisePickerScreen> {
                       child: Icon(Icons.fitness_center),
                     ),
                     title: Text(
-                      exercise,
+                      exercise.name,
                       style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    subtitle: Text(
+                      '${exercise.muscleGroup} • ${exercise.equipment}',
                     ),
                     trailing: const Icon(Icons.add),
                     onTap: () {
-                      Navigator.pop(context, exercise);
+                      Navigator.pop(context, exercise.name);
                     },
                   ),
                 );
