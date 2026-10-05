@@ -5,29 +5,17 @@ class WorkoutRepository {
     const Workout(
       id: '1',
       name: 'Upper Body',
-      exercises: [
-        'Bench Press',
-        'Barbell Row',
-        'Shoulder Press',
-      ],
+      exercises: ['Bench Press', 'Barbell Row', 'Shoulder Press'],
     ),
     const Workout(
       id: '2',
       name: 'Lower Body',
-      exercises: [
-        'Barbell Squat',
-        'Leg Press',
-        'Romanian Deadlift',
-      ],
+      exercises: ['Barbell Squat', 'Leg Press', 'Romanian Deadlift'],
     ),
     const Workout(
       id: '3',
       name: 'Full Body',
-      exercises: [
-        'Barbell Squat',
-        'Bench Press',
-        'Barbell Row',
-      ],
+      exercises: ['Barbell Squat', 'Bench Press', 'Barbell Row'],
     ),
   ];
 
@@ -39,13 +27,26 @@ class WorkoutRepository {
     _workouts.add(workout);
   }
 
-  void addExerciseToWorkout(
-    String workoutId,
-    String exerciseName,
-  ) {
-    final index = _workouts.indexWhere(
-      (workout) => workout.id == workoutId,
+  void addExerciseToWorkout(String workoutId, String exerciseName) {
+    final index = _workouts.indexWhere((workout) => workout.id == workoutId);
+
+    if (index == -1) {
+      return;
+    }
+
+    final workout = _workouts[index];
+
+    if (workout.exercises.contains(exerciseName)) {
+      return;
+    }
+
+    _workouts[index] = workout.copyWith(
+      exercises: [...workout.exercises, exerciseName],
     );
+  }
+
+  void removeExerciseFromWorkout(String workoutId, String exerciseName) {
+    final index = _workouts.indexWhere((workout) => workout.id == workoutId);
 
     if (index == -1) {
       return;
@@ -54,10 +55,9 @@ class WorkoutRepository {
     final workout = _workouts[index];
 
     _workouts[index] = workout.copyWith(
-      exercises: [
-        ...workout.exercises,
-        exerciseName,
-      ],
+      exercises: workout.exercises
+          .where((exercise) => exercise != exerciseName)
+          .toList(),
     );
   }
 }

@@ -8,9 +8,7 @@ final workoutRepositoryProvider = Provider<WorkoutRepository>((ref) {
 });
 
 final workoutViewModelProvider =
-    NotifierProvider<WorkoutViewModel, List<Workout>>(
-  WorkoutViewModel.new,
-);
+    NotifierProvider<WorkoutViewModel, List<Workout>>(WorkoutViewModel.new);
 
 class WorkoutViewModel extends Notifier<List<Workout>> {
   late final WorkoutRepository _repository;
@@ -33,14 +31,14 @@ class WorkoutViewModel extends Notifier<List<Workout>> {
     state = _repository.getWorkouts();
   }
 
-  void addExercise(
-    String workoutId,
-    String exerciseName,
-  ) {
-    _repository.addExerciseToWorkout(
-      workoutId,
-      exerciseName,
-    );
+  void addExercise(String workoutId, String exerciseName) {
+    _repository.addExerciseToWorkout(workoutId, exerciseName);
+
+    state = _repository.getWorkouts();
+  }
+
+  void removeExercise(String workoutId, String exerciseName) {
+    _repository.removeExerciseFromWorkout(workoutId, exerciseName);
 
     state = _repository.getWorkouts();
   }
