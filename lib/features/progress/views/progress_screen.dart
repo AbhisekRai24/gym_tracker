@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:gym_track/features/progress/widgets/lib/features/progress/widgets/progress_chart.dart';
 
 import '../viewmodels/progress_viewmodel.dart';
 
@@ -117,6 +118,23 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
                         ),
                       ),
                       subtitle: Text(selectedBest.exerciseName),
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+                ],
+                if (selectedProgress.length >= 2) ...[
+                  const Text(
+                    'Progress Chart',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: ProgressChart(data: selectedProgress),
                     ),
                   ),
 
