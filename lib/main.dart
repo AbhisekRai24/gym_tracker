@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'features/workouts/viewmodels/workout_viewmodel.dart';
+import 'features/workouts/models/workout.dart';
 
 void main() {
-  runApp(const GymTrackApp());
+  runApp(const ProviderScope(child: GymTrackApp()));
 }
 
 class GymTrackApp extends StatelessWidget {
@@ -155,55 +158,48 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-class WorkoutsScreen extends StatelessWidget {
+class WorkoutsScreen extends ConsumerWidget {
   const WorkoutsScreen({super.key});
 
+  Future<void> _createWorkout(BuildContext context, WidgetRef ref) async {
+    final workoutName = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(builder: (context) => const CreateWorkoutScreen()),
+    );
+
+    if (workoutName != null) {
+      ref.read(workoutViewModelProvider.notifier).addWorkout(workoutName);
+    }
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final workouts = ref.watch(workoutViewModelProvider);
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'My Workouts',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        actions: [
-          IconButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const CreateWorkoutScreen(),
-                ),
-              );
-            },
-            icon: const Icon(Icons.add),
-          ),
-        ],
-      ),
-
-      body: ListView(
+      appBar: AppBar(title: const Text('Workouts')),
+      body: ListView.builder(
         padding: const EdgeInsets.all(16),
-        children: [
-          WorkoutCard(name: 'Upper Body', exerciseCount: 5),
+        itemCount: workouts.length,
+        itemBuilder: (context, index) {
+          final workout = workouts[index];
 
-          WorkoutCard(name: 'Lower Body', exerciseCount: 4),
-
-          WorkoutCard(name: 'Full Body', exerciseCount: 6),
-        ],
+          return WorkoutCard(workout: workout);
+        },
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _createWorkout(context, ref),
+        icon: const Icon(Icons.add),
+        label: const Text('Create Workout'),
       ),
     );
   }
 }
 
 class WorkoutCard extends StatelessWidget {
-  final String name;
-  final int exerciseCount;
+  final Workout workout;
 
-  const WorkoutCard({
-    super.key,
-    required this.name,
-    required this.exerciseCount,
-  });
+  const WorkoutCard({super.key, required this.workout});
 
   @override
   Widget build(BuildContext context) {
@@ -211,20 +207,20 @@ class WorkoutCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
         contentPadding: const EdgeInsets.all(16),
-
         leading: const CircleAvatar(child: Icon(Icons.fitness_center)),
-
         title: Text(
-          name,
+          workout.name,
           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
-
-        subtitle: Text('$exerciseCount exercises'),
-
+        subtitle: Text('${workout.exercises.length} exercises'),
         trailing: const Icon(Icons.chevron_right),
-
         onTap: () {
-          // We'll open the workout here later.
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => WorkoutDetailScreen(workoutId: workout.id),
+            ),
+          );
         },
       ),
     );
@@ -246,6 +242,67 @@ class ProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Center(child: Text('Profile'));
+  }
+}
+
+class WorkoutDetailScreen extends ConsumerWidget {
+  final String workoutId;
+
+  const WorkoutDetailScreen({super.key, required this.workoutId});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final workouts = ref.watch(workoutViewModelProvider);
+
+    final workout = workouts.firstWhere((workout) => workout.id == workoutId);
+
+    return Scaffold(
+      appBar: AppBar(title: Text(workout.name)),
+      body: workout.exercises.isEmpty
+          ? const Center(
+              child: Text(
+                'No exercises yet',
+                style: TextStyle(fontSize: 18, color: Colors.grey),
+              ),
+            )
+          : ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: workout.exercises.length,
+              itemBuilder: (context, index) {
+                final exercise = workout.exercises[index];
+
+                return Card(
+                  child: ListTile(
+                    leading: const CircleAvatar(
+                      child: Icon(Icons.fitness_center),
+                    ),
+                    title: Text(
+                      exercise,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                );
+              },
+            ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () async {
+          final exercise = await Navigator.push<String>(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const ExercisePickerScreen(),
+            ),
+          );
+
+          if (exercise != null) {
+            ref
+                .read(workoutViewModelProvider.notifier)
+                .addExercise(workoutId, exercise);
+          }
+        },
+        icon: const Icon(Icons.add),
+        label: const Text('Add Exercise'),
+      ),
+    );
   }
 }
 
@@ -410,6 +467,56 @@ class _WorkoutHistoryTile extends StatelessWidget {
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         trailing: Text(date),
+      ),
+    );
+  }
+}
+
+class ExercisePickerScreen extends StatelessWidget {
+  const ExercisePickerScreen({super.key});
+
+  final List<String> exercises = const [
+    'Bench Press',
+    'Incline Dumbbell Press',
+    'Cable Fly',
+    'Shoulder Press',
+    'Lateral Raise',
+    'Tricep Pushdown',
+    'Barbell Row',
+    'Lat Pulldown',
+    'Barbell Squat',
+    'Leg Press',
+    'Romanian Deadlift',
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Add Exercise')),
+
+      body: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: exercises.length,
+        itemBuilder: (context, index) {
+          final exercise = exercises[index];
+
+          return Card(
+            child: ListTile(
+              leading: const CircleAvatar(child: Icon(Icons.fitness_center)),
+
+              title: Text(
+                exercise,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+
+              trailing: const Icon(Icons.add),
+
+              onTap: () {
+                Navigator.pop(context, exercise);
+              },
+            ),
+          );
+        },
       ),
     );
   }
