@@ -3,12 +3,28 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../viewmodels/progress_viewmodel.dart';
 
-class ProgressScreen extends ConsumerWidget {
+class ProgressScreen extends ConsumerStatefulWidget {
   const ProgressScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ProgressScreen> createState() => _ProgressScreenState();
+}
+
+class _ProgressScreenState extends ConsumerState<ProgressScreen> {
+  String? _selectedExercise;
+
+  @override
+  Widget build(BuildContext context) {
     final progress = ref.watch(progressViewModelProvider);
+
+    final availableExercises = progress
+        .map((item) => item.exerciseName)
+        .toSet()
+        .toList();
+
+    if (_selectedExercise == null && availableExercises.isNotEmpty) {
+      _selectedExercise = availableExercises.first;
+    }
 
     final bestPerformance = ref
         .read(progressViewModelProvider.notifier)
@@ -16,10 +32,15 @@ class ProgressScreen extends ConsumerWidget {
 
     final totalSets = progress.length;
 
-    final exerciseNames = progress
-        .map((item) => item.exerciseName)
-        .toSet()
-        .length;
+    final exerciseCount = availableExercises.length;
+
+    final selectedProgress = progress
+        .where((item) => item.exerciseName == _selectedExercise)
+        .toList();
+
+    final selectedBest = _selectedExercise == null
+        ? null
+        : bestPerformance[_selectedExercise];
 
     return Scaffold(
       appBar: AppBar(
@@ -45,44 +66,95 @@ class ProgressScreen extends ConsumerWidget {
                     Expanded(
                       child: _ProgressSummaryCard(
                         title: 'Exercises',
-                        value: '$exerciseNames',
+                        value: '$exerciseCount',
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 24),
-                const Text(
-                  'Best Performance',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 12),
 
-                ...bestPerformance.values.map(
-                  (item) => Card(
-                    margin: const EdgeInsets.only(bottom: 10),
+                const SizedBox(height: 24),
+
+                DropdownButtonFormField<String>(
+                  value: _selectedExercise,
+                  decoration: const InputDecoration(
+                    labelText: 'Select Exercise',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: availableExercises.map((exercise) {
+                    return DropdownMenuItem(
+                      value: exercise,
+                      child: Text(exercise),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedExercise = value;
+                    });
+                  },
+                ),
+
+                const SizedBox(height: 24),
+
+                // Best Performance
+                if (selectedBest != null) ...[
+                  const Text(
+                    'Best Performance',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  Card(
                     child: ListTile(
                       leading: const CircleAvatar(
                         child: Icon(Icons.emoji_events),
                       ),
                       title: Text(
+                        '${selectedBest.weight} kg × ${selectedBest.reps} reps',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
+                      ),
+                      subtitle: Text(selectedBest.exerciseName),
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+                ],
+
+                // Progress History
+                const Text(
+                  'Progress History',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+
+                const SizedBox(height: 12),
+
+                ...selectedProgress.reversed.map(
+                  (item) => Card(
+                    margin: const EdgeInsets.only(bottom: 10),
+                    child: ListTile(
+                      title: Text(
                         item.exerciseName,
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                       subtitle: Text('${item.weight} kg × ${item.reps} reps'),
-                      trailing: const Text(
-                        'BEST',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
+                      trailing: Text('${item.date.day}/${item.date.month}'),
                     ),
                   ),
                 ),
 
-                const SizedBox(height: 14),
+                const SizedBox(height: 24),
+
+                // Recent Performance
                 const Text(
                   'Recent Performance',
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
+
                 const SizedBox(height: 12),
+
                 ...progress.reversed.map(
                   (item) => Card(
                     margin: const EdgeInsets.only(bottom: 10),
