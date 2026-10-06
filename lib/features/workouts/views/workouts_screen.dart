@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import 'package:gym_track/features/workouts/viewmodels/workout_viewmodel.dart';
 import 'package:gym_track/features/workouts/views/create_workout_screen.dart';
 import 'package:gym_track/features/workouts/widgets/workout_card.dart';
 
+import '../models/workout.dart';
 import 'workout_history_screen.dart';
 
 class WorkoutsScreen extends ConsumerWidget {
@@ -17,6 +19,25 @@ class WorkoutsScreen extends ConsumerWidget {
 
     if (workoutName != null) {
       ref.read(workoutViewModelProvider.notifier).addWorkout(workoutName);
+    }
+  }
+
+  Future<void> _editWorkout(
+    BuildContext context,
+    WidgetRef ref,
+    Workout workout,
+  ) async {
+    final workoutName = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CreateWorkoutScreen(workout: workout),
+      ),
+    );
+
+    if (workoutName != null) {
+      final updatedWorkout = workout.copyWith(name: workoutName);
+
+      ref.read(workoutViewModelProvider.notifier).updateWorkout(updatedWorkout);
     }
   }
 
@@ -54,7 +75,10 @@ class WorkoutsScreen extends ConsumerWidget {
         itemBuilder: (context, index) {
           final workout = workouts[index];
 
-          return WorkoutCard(workout: workout);
+          return WorkoutCard(
+            workout: workout,
+            onEdit: () => _editWorkout(context, ref, workout),
+          );
         },
       ),
     );

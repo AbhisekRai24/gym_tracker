@@ -36,6 +36,18 @@ class WorkoutViewModel extends Notifier<List<Workout>> {
     state = _repository.getWorkouts();
   }
 
+  void updateWorkout(Workout workout) {
+    _repository.updateWorkout(workout);
+
+    state = _repository.getWorkouts();
+  }
+
+  void deleteWorkout(String workoutId) {
+    _repository.deleteWorkout(workoutId);
+
+    state = _repository.getWorkouts();
+  }
+
   void addExercise(String workoutId, String exerciseName) {
     _repository.addExerciseToWorkout(workoutId, exerciseName);
 

@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
+
 import 'package:gym_track/features/workouts/views/workout_detail_screen.dart';
 
 import '../models/workout.dart';
 
-
 class WorkoutCard extends StatelessWidget {
   final Workout workout;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
 
   const WorkoutCard({
     super.key,
     required this.workout,
+    this.onEdit,
+    this.onDelete,
   });
 
   @override
@@ -18,27 +22,32 @@ class WorkoutCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
         contentPadding: const EdgeInsets.all(16),
-        leading: const CircleAvatar(
-          child: Icon(Icons.fitness_center),
-        ),
+        leading: const CircleAvatar(child: Icon(Icons.fitness_center)),
         title: Text(
           workout.name,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
-        subtitle: Text(
-          '${workout.exercises.length} exercises',
+        subtitle: Text('${workout.exercises.length} exercises'),
+        trailing: PopupMenuButton<String>(
+          onSelected: (value) {
+            if (value == 'edit') {
+              onEdit?.call();
+            }
+
+            if (value == 'delete') {
+              onDelete?.call();
+            }
+          },
+          itemBuilder: (context) => [
+            const PopupMenuItem(value: 'edit', child: Text('Edit')),
+            const PopupMenuItem(value: 'delete', child: Text('Delete')),
+          ],
         ),
-        trailing: const Icon(Icons.chevron_right),
         onTap: () {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => WorkoutDetailScreen(
-                workoutId: workout.id,
-              ),
+              builder: (context) => WorkoutDetailScreen(workoutId: workout.id),
             ),
           );
         },

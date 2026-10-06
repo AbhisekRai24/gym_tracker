@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
 
+import '../models/workout.dart';
+
+
+
 class CreateWorkoutScreen extends StatefulWidget {
-  const CreateWorkoutScreen({super.key});
+  final Workout? workout;
+
+  const CreateWorkoutScreen({super.key, this.workout});
 
   @override
   State<CreateWorkoutScreen> createState() => _CreateWorkoutScreenState();
@@ -21,9 +27,7 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
 
     if (workoutName.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter a workout name'),
-        ),
+        const SnackBar(content: Text('Please enter a workout name')),
       );
       return;
     }
@@ -33,9 +37,11 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isEditing = widget.workout != null;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Create Workout'),
+        title: Text(isEditing ? 'Edit Workout' : 'Create Workout'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
@@ -44,10 +50,7 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
           children: [
             const Text(
               'Workout name',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
             TextField(
@@ -62,7 +65,7 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
               width: double.infinity,
               child: FilledButton(
                 onPressed: _saveWorkout,
-                child: const Text('SAVE WORKOUT'),
+                child: Text(isEditing ? 'SAVE CHANGES' : 'SAVE WORKOUT'),
               ),
             ),
           ],

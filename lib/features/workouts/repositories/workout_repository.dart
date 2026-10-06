@@ -1,8 +1,6 @@
 import '../models/workout.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
-
-
 class WorkoutRepository {
   final Box _box;
 
@@ -20,6 +18,14 @@ class WorkoutRepository {
     _box.put(workout.id, _toMap(workout));
   }
 
+  void updateWorkout(Workout workout) {
+    _box.put(workout.id, _toMap(workout));
+  }
+
+  void deleteWorkout(String workoutId) {
+    _box.delete(workoutId);
+  }
+
   void addExerciseToWorkout(String workoutId, String exerciseName) {
     final workout = _findWorkout(workoutId);
 
@@ -30,16 +36,10 @@ class WorkoutRepository {
       exercises: [...workout.exercises, exerciseName],
     );
 
-    _box.put(
-      workoutId,
-      _toMap(updatedWorkout),
-    );
+    _box.put(workoutId, _toMap(updatedWorkout));
   }
 
-  void removeExerciseFromWorkout(
-    String workoutId,
-    String exerciseName,
-  ) {
+  void removeExerciseFromWorkout(String workoutId, String exerciseName) {
     final workout = _findWorkout(workoutId);
 
     if (workout == null) return;
@@ -50,10 +50,7 @@ class WorkoutRepository {
           .toList(),
     );
 
-    _box.put(
-      workoutId,
-      _toMap(updatedWorkout),
-    );
+    _box.put(workoutId, _toMap(updatedWorkout));
   }
 
   Workout? _findWorkout(String workoutId) {
@@ -87,37 +84,22 @@ class WorkoutRepository {
       Workout(
         id: '1',
         name: 'Upper Body',
-        exercises: [
-          'Bench Press',
-          'Barbell Row',
-          'Shoulder Press',
-        ],
+        exercises: ['Bench Press', 'Barbell Row', 'Shoulder Press'],
       ),
       Workout(
         id: '2',
         name: 'Lower Body',
-        exercises: [
-          'Barbell Squat',
-          'Leg Press',
-          'Romanian Deadlift',
-        ],
+        exercises: ['Barbell Squat', 'Leg Press', 'Romanian Deadlift'],
       ),
       Workout(
         id: '3',
         name: 'Full Body',
-        exercises: [
-          'Barbell Squat',
-          'Bench Press',
-          'Barbell Row',
-        ],
+        exercises: ['Barbell Squat', 'Bench Press', 'Barbell Row'],
       ),
     ];
 
     for (final workout in workouts) {
-      _box.put(
-        workout.id,
-        _toMap(workout),
-      );
+      _box.put(workout.id, _toMap(workout));
     }
   }
 }

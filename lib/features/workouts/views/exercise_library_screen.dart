@@ -7,6 +7,41 @@ import 'add_exercise_screen.dart';
 class ExerciseLibraryScreen extends ConsumerWidget {
   const ExerciseLibraryScreen({super.key});
 
+  Future<void> _confirmDelete(
+    BuildContext context,
+    WidgetRef ref,
+    String exerciseId,
+    String exerciseName,
+  ) async {
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Delete Exercise?'),
+          content: Text('Are you sure you want to delete "$exerciseName"?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context, false);
+              },
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.pop(context, true);
+              },
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldDelete == true) {
+      ref.read(exerciseViewModelProvider.notifier).deleteExercise(exerciseId);
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final exercises = ref.watch(exerciseViewModelProvider);
@@ -51,9 +86,12 @@ class ExerciseLibraryScreen extends ConsumerWidget {
                         }
 
                         if (value == 'delete') {
-                          ref
-                              .read(exerciseViewModelProvider.notifier)
-                              .deleteExercise(exercise.id);
+                          _confirmDelete(
+                            context,
+                            ref,
+                            exercise.id,
+                            exercise.name,
+                          );
                         }
                       },
                       itemBuilder: (context) => [
