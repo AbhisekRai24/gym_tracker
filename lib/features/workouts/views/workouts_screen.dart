@@ -41,6 +41,40 @@ class WorkoutsScreen extends ConsumerWidget {
     }
   }
 
+  Future<void> _deleteWorkout(
+    BuildContext context,
+    WidgetRef ref,
+    Workout workout,
+  ) async {
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Delete Workout?'),
+          content: Text('Are you sure you want to delete "${workout.name}"?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context, false);
+              },
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.pop(context, true);
+              },
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldDelete == true) {
+      ref.read(workoutViewModelProvider.notifier).deleteWorkout(workout.id);
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final workouts = ref.watch(workoutViewModelProvider);
@@ -78,6 +112,7 @@ class WorkoutsScreen extends ConsumerWidget {
           return WorkoutCard(
             workout: workout,
             onEdit: () => _editWorkout(context, ref, workout),
+            onDelete: () => _deleteWorkout(context, ref, workout),
           );
         },
       ),
