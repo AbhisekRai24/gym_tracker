@@ -2,9 +2,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/workout.dart';
 import '../repositories/workout_repository.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+
+import '../../../core/storage/hive_boxes.dart';
 
 final workoutRepositoryProvider = Provider<WorkoutRepository>((ref) {
-  return WorkoutRepository();
+  final box = Hive.box(HiveBoxes.workouts);
+
+  return WorkoutRepository(box);
 });
 
 final workoutViewModelProvider =
