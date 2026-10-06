@@ -2,19 +2,24 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/workout_session.dart';
 import '../repositories/workout_session_repository.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
-final workoutSessionRepositoryProvider =
-    Provider<WorkoutSessionRepository>((ref) {
-  return WorkoutSessionRepository();
+import '../../../core/storage/hive_boxes.dart';
+
+final workoutSessionRepositoryProvider = Provider<WorkoutSessionRepository>((
+  ref,
+) {
+  final box = Hive.box(HiveBoxes.workoutSessions);
+
+  return WorkoutSessionRepository(box);
 });
 
 final workoutSessionViewModelProvider =
     NotifierProvider<WorkoutSessionViewModel, List<WorkoutSession>>(
-  WorkoutSessionViewModel.new,
-);
+      WorkoutSessionViewModel.new,
+    );
 
-class WorkoutSessionViewModel
-    extends Notifier<List<WorkoutSession>> {
+class WorkoutSessionViewModel extends Notifier<List<WorkoutSession>> {
   late final WorkoutSessionRepository _repository;
 
   @override
