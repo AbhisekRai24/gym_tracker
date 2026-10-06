@@ -7,10 +7,7 @@ import 'exercise_detail_screen.dart';
 class ExercisePickerScreen extends ConsumerStatefulWidget {
   final String workoutId;
 
-  const ExercisePickerScreen({
-    super.key,
-    required this.workoutId,
-  });
+  const ExercisePickerScreen({super.key, required this.workoutId});
 
   @override
   ConsumerState<ExercisePickerScreen> createState() =>
@@ -134,9 +131,9 @@ class _ExercisePickerScreenState extends ConsumerState<ExercisePickerScreen> {
                         context,
                         MaterialPageRoute(
                           builder: (context) => ExerciseDetailScreen(
-  exercise: exercise,
-  workoutId: widget.workoutId,
-),
+                            exercise: exercise,
+                            workoutId: widget.workoutId,
+                          ),
                         ),
                       );
                     },

@@ -1,6 +1,6 @@
 import 'package:hive_flutter/hive_flutter.dart';
 
-import '../../../core/storage/hive_boxes.dart';
+
 import '../models/workout_session.dart';
 
 class WorkoutSessionRepository {

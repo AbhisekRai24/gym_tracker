@@ -1,7 +1,7 @@
 import '../models/workout.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
-import '../../../core/storage/hive_boxes.dart';
+
 
 class WorkoutRepository {
   final Box _box;

@@ -10,6 +10,7 @@ Future<void> main() async {
   await Hive.initFlutter();
   await HiveBoxes.openWorkoutsBox();
   await HiveBoxes.openWorkoutSessionsBox();
+  await HiveBoxes.openExercisesBox();
 
   runApp(const ProviderScope(child: GymTrackApp()));
 }
