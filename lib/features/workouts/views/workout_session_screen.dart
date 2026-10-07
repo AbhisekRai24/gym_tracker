@@ -19,6 +19,7 @@ class _WorkoutSessionScreenState extends ConsumerState<WorkoutSessionScreen> {
   final Map<String, List<WorkoutSet>> _loggedSets = {};
   final Map<String, TextEditingController> _weightControllers = {};
   final Map<String, TextEditingController> _repsControllers = {};
+  final DateTime _startTime = DateTime.now();
 
   @override
   void initState() {
@@ -68,7 +69,7 @@ class _WorkoutSessionScreenState extends ConsumerState<WorkoutSessionScreen> {
     _repsControllers[exercise]!.clear();
   }
 
-  void _completeWorkout() {
+  Future<void> _completeWorkout() async {
     final allSets = _loggedSets.values.expand((sets) => sets).toList();
 
     if (allSets.isEmpty) {
@@ -78,14 +79,76 @@ class _WorkoutSessionScreenState extends ConsumerState<WorkoutSessionScreen> {
       return;
     }
 
+    final duration = DateTime.now().difference(_startTime);
+
     final session = WorkoutSession(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       workoutId: widget.workout.id,
       date: DateTime.now(),
+      duration: duration,
       sets: allSets,
     );
 
     ref.read(workoutSessionViewModelProvider.notifier).addSession(session);
+
+    final totalSets = allSets.length;
+
+    final completedExercises = _loggedSets.entries
+        .where((entry) => entry.value.isNotEmpty)
+        .length;
+
+    double totalVolume = 0;
+    double bestLift = 0;
+
+    for (final set in allSets) {
+      totalVolume += set.weight * set.reps;
+
+      if (set.weight > bestLift) {
+        bestLift = set.weight;
+      }
+    }
+
+    final minutes = duration.inMinutes;
+    final seconds = duration.inSeconds % 60;
+
+    final durationText = minutes > 0
+        ? '$minutes min ${seconds.toString().padLeft(2, '0')} sec'
+        : '$seconds sec';
+
+    if (!mounted) return;
+
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Workout Complete 🎉'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(widget.workout.name),
+              const SizedBox(height: 16),
+              Text('Duration: $durationText'),
+              Text('Exercises: $completedExercises'),
+              Text('Sets: $totalSets'),
+              Text('Best Lift: ${bestLift.toStringAsFixed(1)} kg'),
+              Text('Total Volume: ${totalVolume.toStringAsFixed(1)} kg'),
+            ],
+          ),
+          actions: [
+            FilledButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('DONE'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (!mounted) return;
 
     Navigator.pop(context);
   }

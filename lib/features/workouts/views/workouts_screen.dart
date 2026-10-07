@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:gym_track/features/workouts/viewmodels/workout_viewmodel.dart';
-import 'package:gym_track/features/workouts/views/create_workout_screen.dart';
 import 'package:gym_track/features/workouts/widgets/workout_card.dart';
+import 'package:gym_track/features/workouts/views/create_workout_screen.dart';
+import 'edit_workout_screen.dart';
 
 import '../models/workout.dart';
 import 'workout_history_screen.dart';
@@ -22,23 +23,13 @@ class WorkoutsScreen extends ConsumerWidget {
     }
   }
 
-  Future<void> _editWorkout(
-    BuildContext context,
-    WidgetRef ref,
-    Workout workout,
-  ) async {
-    final workoutName = await Navigator.push<String>(
+  void _editWorkout(BuildContext context, Workout workout) {
+    Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => CreateWorkoutScreen(workout: workout),
+        builder: (context) => EditWorkoutScreen(workout: workout),
       ),
     );
-
-    if (workoutName != null) {
-      final updatedWorkout = workout.copyWith(name: workoutName);
-
-      ref.read(workoutViewModelProvider.notifier).updateWorkout(updatedWorkout);
-    }
   }
 
   Future<void> _deleteWorkout(
@@ -111,7 +102,7 @@ class WorkoutsScreen extends ConsumerWidget {
 
           return WorkoutCard(
             workout: workout,
-            onEdit: () => _editWorkout(context, ref, workout),
+            onEdit: () => _editWorkout(context, workout),
             onDelete: () => _deleteWorkout(context, ref, workout),
           );
         },

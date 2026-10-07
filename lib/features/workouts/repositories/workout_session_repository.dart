@@ -1,6 +1,5 @@
 import 'package:hive_flutter/hive_flutter.dart';
 
-
 import '../models/workout_session.dart';
 
 class WorkoutSessionRepository {
@@ -21,6 +20,7 @@ class WorkoutSessionRepository {
       'id': session.id,
       'workoutId': session.workoutId,
       'date': session.date.toIso8601String(),
+      'duration': session.duration.inMilliseconds,
       'sets': session.sets.map((set) {
         return {
           'exerciseName': set.exerciseName,
@@ -44,10 +44,16 @@ class WorkoutSessionRepository {
       );
     }).toList();
 
+    final durationMilliseconds =
+        (map['duration'] as num?)?.toInt() ?? 0;
+
     return WorkoutSession(
       id: map['id'] as String,
       workoutId: map['workoutId'] as String,
       date: DateTime.parse(map['date'] as String),
+      duration: Duration(
+        milliseconds: durationMilliseconds,
+      ),
       sets: sets,
     );
   }
