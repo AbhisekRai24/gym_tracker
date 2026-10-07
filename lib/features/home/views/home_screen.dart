@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:gym_track/features/planner/viewmodels/weekly_schedule_viewmodel.dart';
 import 'package:gym_track/features/workouts/models/workout_session.dart';
 
 import '../../workouts/models/workout.dart';
@@ -36,8 +37,17 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final workouts = ref.watch(workoutViewModelProvider);
     final sessions = ref.watch(workoutSessionViewModelProvider);
-    final todayWorkout = workouts.isNotEmpty ? workouts.first : null;
+
     final today = DateTime.now();
+    final schedule = ref.watch(weeklyScheduleViewModelProvider);
+
+    final todayIndex = today.weekday % 7;
+
+    final todayWorkoutId = schedule.workoutForDay(todayIndex);
+
+    final todayWorkout = todayWorkoutId == null
+        ? null
+        : workouts.firstWhere((workout) => workout.id == todayWorkoutId);
 
     final startOfWeek = today.subtract(Duration(days: today.weekday % 7));
     final totalSets = sessions.fold<int>(
@@ -86,7 +96,20 @@ class HomeScreen extends ConsumerWidget {
               child: Padding(
                 padding: const EdgeInsets.all(20),
                 child: todayWorkout == null
-                    ? const Text('No workouts yet')
+                    ? const Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Rest Day 😴',
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          SizedBox(height: 8),
+                          Text('No workout scheduled for today.'),
+                        ],
+                      )
                     : Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
