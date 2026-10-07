@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../../workouts/views/exercise_library_screen.dart';
 import 'edit_profile_screen.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+
+import '../../../core/storage/hive_boxes.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -12,6 +15,25 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   String _name = 'Abhisek';
+
+  @override
+  void initState() {
+    super.initState();
+
+    _loadProfile();
+  }
+
+  void _loadProfile() {
+    final box = Hive.box(HiveBoxes.profile);
+
+    final savedName = box.get('name');
+
+    if (savedName != null) {
+      setState(() {
+        _name = savedName as String;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,11 +48,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
               final name = await Navigator.push<String>(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const EditProfileScreen(),
+                  builder: (context) => EditProfileScreen(currentName: _name),
                 ),
               );
 
               if (name != null) {
+                final box = Hive.box(HiveBoxes.profile);
+
+                await box.put('name', name);
+
                 setState(() {
                   _name = name;
                 });

@@ -1,16 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+
+import '../../../core/storage/hive_boxes.dart';
 
 class EditProfileScreen extends StatefulWidget {
-  const EditProfileScreen({super.key});
+  final String currentName;
+
+  const EditProfileScreen({super.key, required this.currentName});
 
   @override
   State<EditProfileScreen> createState() => _EditProfileScreenState();
 }
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
-  final TextEditingController _nameController = TextEditingController(
-    text: 'Abhisek',
-  );
+  @override
+  void initState() {
+    super.initState();
+
+    _nameController.text = widget.currentName;
+  }
+
+  final TextEditingController _nameController = TextEditingController();
 
   @override
   void dispose() {
