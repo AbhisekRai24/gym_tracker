@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:gym_track/features/planner/views/weekly_planner_screen.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../auth/viewmodel/auth_viewmodel.dart';
@@ -103,6 +104,20 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
 
           const SizedBox(height: 24),
+          ListTile(
+            leading: const Icon(Icons.calendar_month),
+            title: const Text('Workout Planner'),
+            subtitle: const Text('Plan your weekly workouts'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const WeeklyPlannerScreen(),
+                ),
+              );
+            },
+          ),
 
           ListTile(
             leading: const Icon(Icons.fitness_center),

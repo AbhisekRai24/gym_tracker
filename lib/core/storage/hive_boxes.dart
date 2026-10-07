@@ -6,6 +6,7 @@ class HiveBoxes {
   static const String exercises = 'exercises';
   static const String profile = 'profile';
   static const String auth = 'auth';
+  static const String planner = 'planner';
 
   static Future<Box> openWorkoutsBox() async {
     return Hive.openBox(workouts);
@@ -22,7 +23,12 @@ class HiveBoxes {
   static Future<Box> openProfileBox() async {
     return Hive.openBox(profile);
   }
+
   static Future<Box> openAuthBox() async {
-  return Hive.openBox(auth);
-}
+    return Hive.openBox(auth);
+  }
+
+  static Future<Box> openPlannerBox() async {
+    return Hive.openBox(planner);
+  }
 }
