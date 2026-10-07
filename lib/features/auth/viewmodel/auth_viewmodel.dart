@@ -64,4 +64,14 @@ class AuthViewModel extends Notifier<bool> {
 
     state = false;
   }
+
+  bool updateUsername(String newUsername) {
+    return _repository.updateUsername(newUsername);
+  }
+
+  void updateAvatar(String avatarPath) {
+  _repository.updateAvatar(avatarPath);
+
+  ref.invalidate(authRepositoryProvider);
+}
 }

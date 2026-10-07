@@ -47,23 +47,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     if (!success) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Incorrect email or password'),
-        ),
+        const SnackBar(content: Text('Incorrect email or password')),
       );
 
       return;
     }
-
-    Navigator.pop(context);
   }
 
   Future<void> _openSignup() async {
     await Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const SignupScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => const SignupScreen()),
     );
   }
 
@@ -80,29 +74,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               children: [
                 const SizedBox(height: 60),
 
-                const Icon(
-                  Icons.fitness_center,
-                  size: 64,
-                ),
+                const Icon(Icons.fitness_center, size: 64),
 
                 const SizedBox(height: 24),
 
                 const Text(
                   'Welcome back',
-                  style: TextStyle(
-                    fontSize: 30,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
                 ),
 
                 const SizedBox(height: 8),
 
                 const Text(
                   'Log in to continue your training.',
-                  style: TextStyle(
-                    color: Colors.grey,
-                    fontSize: 16,
-                  ),
+                  style: TextStyle(color: Colors.grey, fontSize: 16),
                 ),
 
                 const SizedBox(height: 40),
@@ -119,8 +104,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       return 'Please enter your email';
                     }
 
-                    final emailRegex =
-                        RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
+                    final emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
 
                     if (!emailRegex.hasMatch(value.trim())) {
                       return 'Please enter a valid email';
@@ -175,9 +159,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 Center(
                   child: TextButton(
                     onPressed: _openSignup,
-                    child: const Text(
-                      "Don't have an account? Sign up",
-                    ),
+                    child: const Text("Don't have an account? Sign up"),
                   ),
                 ),
               ],

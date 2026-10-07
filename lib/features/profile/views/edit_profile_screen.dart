@@ -1,44 +1,56 @@
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:gym_track/features/auth/viewmodel/auth_viewmodel.dart';
 
-import '../../../core/storage/hive_boxes.dart';
+class EditProfileScreen extends ConsumerStatefulWidget {
+  final String currentUsername;
 
-class EditProfileScreen extends StatefulWidget {
-  final String currentName;
-
-  const EditProfileScreen({super.key, required this.currentName});
+  const EditProfileScreen({super.key, required this.currentUsername});
 
   @override
-  State<EditProfileScreen> createState() => _EditProfileScreenState();
+  ConsumerState<EditProfileScreen> createState() => _EditProfileScreenState();
 }
 
-class _EditProfileScreenState extends State<EditProfileScreen> {
+class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
+  late final TextEditingController _usernameController;
+
   @override
   void initState() {
     super.initState();
 
-    _nameController.text = widget.currentName;
+    _usernameController = TextEditingController(text: widget.currentUsername);
   }
-
-  final TextEditingController _nameController = TextEditingController();
 
   @override
   void dispose() {
-    _nameController.dispose();
+    _usernameController.dispose();
     super.dispose();
   }
 
-  void _saveProfile() {
-    final name = _nameController.text.trim();
+  void _saveUsername() {
+    final username = _usernameController.text.trim();
 
-    if (name.isEmpty) {
+    if (username.isEmpty) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Please enter your name')));
+      ).showSnackBar(const SnackBar(content: Text('Please enter a username')));
+
       return;
     }
 
-    Navigator.pop(context, name);
+    final success = ref
+        .read(authViewModelProvider.notifier)
+        .updateUsername(username);
+
+    if (!success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Username is already taken')),
+      );
+
+      return;
+    }
+
+    Navigator.pop(context, username);
   }
 
   @override
@@ -54,9 +66,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             const SizedBox(height: 24),
 
             TextField(
-              controller: _nameController,
+              controller: _usernameController,
               decoration: const InputDecoration(
-                labelText: 'Name',
+                labelText: 'Username',
+                prefixText: '@',
                 border: OutlineInputBorder(),
               ),
             ),
@@ -66,7 +79,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             SizedBox(
               width: double.infinity,
               child: FilledButton(
-                onPressed: _saveProfile,
+                onPressed: _saveUsername,
                 child: const Text('SAVE'),
               ),
             ),

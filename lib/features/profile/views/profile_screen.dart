@@ -1,99 +1,109 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:gym_track/features/auth/viewmodel/auth_viewmodel.dart';
+
+import 'package:image_picker/image_picker.dart';
 
 import '../../workouts/views/exercise_library_screen.dart';
 import 'edit_profile_screen.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 
-import '../../../core/storage/hive_boxes.dart';
-
-class ProfileScreen extends StatefulWidget {
+class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
   @override
-  State<ProfileScreen> createState() => _ProfileScreenState();
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> {
-  String _name = 'Abhisek';
+class _ProfileScreenState extends ConsumerState<ProfileScreen> {
+  Future<void> _pickAvatar() async {
+    final picker = ImagePicker();
 
-  @override
-  void initState() {
-    super.initState();
+    final image = await picker.pickImage(source: ImageSource.gallery);
 
-    _loadProfile();
-  }
-
-  void _loadProfile() {
-    final box = Hive.box(HiveBoxes.profile);
-
-    final savedName = box.get('name');
-
-    if (savedName != null) {
-      setState(() {
-        _name = savedName as String;
-      });
+    if (image == null) {
+      return;
     }
+
+    ref.read(authViewModelProvider.notifier).updateAvatar(image.path);
   }
 
   @override
   Widget build(BuildContext context) {
+    final user = ref.watch(authRepositoryProvider).getUser();
+
     return Scaffold(
       appBar: AppBar(title: const Text('Profile')),
       body: ListView(
         children: [
           const SizedBox(height: 24),
 
-          InkWell(
-            onTap: () async {
-              final name = await Navigator.push<String>(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => EditProfileScreen(currentName: _name),
+          Column(
+            children: [
+              GestureDetector(
+                onTap: _pickAvatar,
+                child: CircleAvatar(
+                  radius: 50,
+                  backgroundImage: user?.avatarPath != null
+                      ? FileImage(File(user!.avatarPath!))
+                      : null,
+                  child: user?.avatarPath == null
+                      ? const Icon(Icons.person, size: 50)
+                      : null,
                 ),
-              );
+              ),
 
-              if (name != null) {
-                final box = Hive.box(HiveBoxes.profile);
+              const SizedBox(height: 8),
 
-                await box.put('name', name);
+              const Text(
+                'Tap to change photo',
+                style: TextStyle(color: Colors.grey),
+              ),
 
-                setState(() {
-                  _name = name;
-                });
-              }
-            },
-            child: Column(
-              children: [
-                const CircleAvatar(
-                  radius: 40,
-                  child: Icon(Icons.person, size: 40),
+              const SizedBox(height: 12),
+
+              Text(
+                '@${user?.username ?? 'User'}',
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
                 ),
+              ),
 
-                const SizedBox(height: 12),
+              const SizedBox(height: 4),
 
-                Text(
-                  _name,
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                ),
+              Text(
+                user?.email ?? '',
+                style: const TextStyle(color: Colors.grey),
+              ),
 
-                const SizedBox(height: 4),
+              const SizedBox(height: 8),
 
-                const Text(
-                  'GymTrack Member',
-                  style: TextStyle(color: Colors.grey),
-                ),
+              TextButton(
+                onPressed: () async {
+                  final username = user?.username;
 
-                const SizedBox(height: 8),
+                  if (username == null) {
+                    return;
+                  }
 
-                const Text(
-                  'Edit Profile',
-                  style: TextStyle(fontWeight: FontWeight.w500),
-                ),
-              ],
-            ),
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          EditProfileScreen(currentUsername: username),
+                    ),
+                  );
+
+                  ref.invalidate(authRepositoryProvider);
+                },
+                child: const Text('Edit Profile'),
+              ),
+            ],
           ),
 
-          const SizedBox(height: 32),
+          const SizedBox(height: 24),
 
           ListTile(
             leading: const Icon(Icons.fitness_center),
@@ -107,6 +117,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   builder: (context) => const ExerciseLibraryScreen(),
                 ),
               );
+            },
+          ),
+
+          const SizedBox(height: 16),
+
+          ListTile(
+            leading: const Icon(Icons.logout),
+            title: const Text('Logout'),
+            onTap: () {
+              ref.read(authViewModelProvider.notifier).logout();
             },
           ),
         ],
