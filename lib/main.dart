@@ -12,6 +12,7 @@ Future<void> main() async {
   await HiveBoxes.openWorkoutSessionsBox();
   await HiveBoxes.openExercisesBox();
   await HiveBoxes.openProfileBox();
+  await HiveBoxes.openAuthBox();
 
   runApp(const ProviderScope(child: GymTrackApp()));
 }

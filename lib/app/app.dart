@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:gym_track/features/auth/view/auth_gate.dart';
 
-import '../features/home/views/dashboard_screen.dart';
 
 class GymTrackApp extends StatelessWidget {
   const GymTrackApp({super.key});
@@ -16,7 +16,7 @@ class GymTrackApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: const DashboardScreen(),
+      home: const AuthGate(),
     );
   }
 }
