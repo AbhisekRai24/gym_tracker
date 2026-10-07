@@ -2,10 +2,9 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:gym_track/features/auth/viewmodel/auth_viewmodel.dart';
-
 import 'package:image_picker/image_picker.dart';
 
+import '../../auth/viewmodel/auth_viewmodel.dart';
 import '../../workouts/views/exercise_library_screen.dart';
 import 'edit_profile_screen.dart';
 

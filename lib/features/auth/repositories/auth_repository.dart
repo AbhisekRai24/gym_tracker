@@ -1,7 +1,6 @@
-import 'package:gym_track/features/auth/model/user.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
-import '../../../core/storage/hive_boxes.dart';
+import '../model/user.dart';
 
 class AuthRepository {
   final Box _box;

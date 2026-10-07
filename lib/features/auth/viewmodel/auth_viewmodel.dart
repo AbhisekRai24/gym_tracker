@@ -70,8 +70,8 @@ class AuthViewModel extends Notifier<bool> {
   }
 
   void updateAvatar(String avatarPath) {
-  _repository.updateAvatar(avatarPath);
+    _repository.updateAvatar(avatarPath);
 
-  ref.invalidate(authRepositoryProvider);
-}
+    ref.invalidate(authRepositoryProvider);
+  }
 }
