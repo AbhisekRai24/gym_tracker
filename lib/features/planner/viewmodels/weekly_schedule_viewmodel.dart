@@ -39,4 +39,10 @@ class WeeklyScheduleViewModel extends Notifier<WeeklySchedule> {
 
     state = _repository.getSchedule();
   }
+
+  Future<void> swapDays(int firstDay, int secondDay) async {
+    await _repository.swapDays(firstDay, secondDay);
+
+    state = _repository.getSchedule();
+  }
 }

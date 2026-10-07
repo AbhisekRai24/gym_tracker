@@ -25,4 +25,21 @@ class WeeklyScheduleRepository {
   Future<void> clearDay(int day) async {
     await _box.delete(day.toString());
   }
+
+  Future<void> swapDays(int firstDay, int secondDay) async {
+    final firstWorkout = _box.get(firstDay.toString());
+    final secondWorkout = _box.get(secondDay.toString());
+
+    if (secondWorkout == null) {
+      await _box.delete(firstDay.toString());
+    } else {
+      await _box.put(firstDay.toString(), secondWorkout);
+    }
+
+    if (firstWorkout == null) {
+      await _box.delete(secondDay.toString());
+    } else {
+      await _box.put(secondDay.toString(), firstWorkout);
+    }
+  }
 }

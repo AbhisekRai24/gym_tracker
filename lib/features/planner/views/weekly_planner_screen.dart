@@ -37,19 +37,65 @@ class WeeklyPlannerScreen extends ConsumerWidget {
                   orElse: () => workouts.first,
                 );
 
-          return Card(
-            margin: const EdgeInsets.only(bottom: 12),
-            child: ListTile(
-              title: Text(
-                dayNames[index],
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-              subtitle: Text(workout?.name ?? 'Rest Day'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () {
-                _showWorkoutPicker(context, ref, index, workouts);
-              },
-            ),
+          return DragTarget<int>(
+            onAcceptWithDetails: (details) async {
+              final draggedDay = details.data;
+
+              if (draggedDay == index) {
+                return;
+              }
+
+              await ref
+                  .read(weeklyScheduleViewModelProvider.notifier)
+                  .swapDays(draggedDay, index);
+            },
+            builder: (context, candidateData, rejectedData) {
+              return Card(
+                margin: const EdgeInsets.only(bottom: 12),
+                color: candidateData.isNotEmpty
+                    ? Colors.green.withValues(alpha: 0.15)
+                    : null,
+                child: ListTile(
+                  title: Text(
+                    dayNames[index],
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  subtitle: Text(workout?.name ?? 'Rest Day'),
+                  trailing: workout == null
+                      ? null
+                      : Draggable<int>(
+                          data: index,
+                          feedback: Material(
+                            color: Colors.transparent,
+                            child: Card(
+                              child: Padding(
+                                padding: const EdgeInsets.all(12),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.fitness_center),
+                                    const SizedBox(width: 8),
+                                    Text(workout.name),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          childWhenDragging: const Icon(
+                            Icons.drag_handle,
+                            color: Colors.grey,
+                          ),
+                          child: const Padding(
+                            padding: EdgeInsets.all(8),
+                            child: Icon(Icons.drag_handle),
+                          ),
+                        ),
+                  onTap: () {
+                    _showWorkoutPicker(context, ref, index, workouts);
+                  },
+                ),
+              );
+            },
           );
         },
       ),
