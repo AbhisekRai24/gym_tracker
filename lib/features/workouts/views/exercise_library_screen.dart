@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:gym_track/core/widgets/app_feedback.dart';
 
 import '../viewmodels/exercise_viewmodel.dart';
 import 'add_exercise_screen.dart';
@@ -28,33 +29,25 @@ class _ExerciseLibraryScreenState extends ConsumerState<ExerciseLibraryScreen> {
     String exerciseId,
     String exerciseName,
   ) async {
-    final shouldDelete = await showDialog<bool>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Delete Exercise?'),
-          content: Text('Are you sure you want to delete "$exerciseName"?'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context, false);
-              },
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () {
-                Navigator.pop(context, true);
-              },
-              child: const Text('Delete'),
-            ),
-          ],
-        );
-      },
+    final shouldDelete = await AppFeedback.confirm(
+      context,
+      title: 'Delete Exercise?',
+      message: 'Are you sure you want to delete "$exerciseName"?',
+      confirmText: 'Delete',
+      destructive: true,
     );
 
-    if (shouldDelete == true) {
-      ref.read(exerciseViewModelProvider.notifier).deleteExercise(exerciseId);
+    if (!shouldDelete) {
+      return;
     }
+
+    ref.read(exerciseViewModelProvider.notifier).deleteExercise(exerciseId);
+
+    if (!context.mounted) {
+      return;
+    }
+
+    AppFeedback.success(context, 'Exercise deleted');
   }
 
   @override

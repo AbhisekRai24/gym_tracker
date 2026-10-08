@@ -30,12 +30,13 @@ class WeeklyPlannerScreen extends ConsumerWidget {
         itemBuilder: (context, index) {
           final workoutId = schedule.workoutForDay(index);
 
-          final workout = workoutId == null
+          final matchingWorkouts = workouts.where(
+            (workout) => workout.id == workoutId,
+          );
+
+          final workout = matchingWorkouts.isEmpty
               ? null
-              : workouts.firstWhere(
-                  (workout) => workout.id == workoutId,
-                  orElse: () => workouts.first,
-                );
+              : matchingWorkouts.first;
 
           return DragTarget<int>(
             onAcceptWithDetails: (details) async {

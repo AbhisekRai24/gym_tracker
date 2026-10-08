@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:gym_track/core/widgets/app_feedback.dart';
 import 'package:gym_track/features/auth/model/user.dart';
 import 'package:gym_track/features/auth/viewmodel/auth_viewmodel.dart';
 
@@ -37,8 +38,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     if (!_formKey.currentState!.validate()) {
       return;
     }
-    final username = _usernameController.text.trim();
 
+    final username = _usernameController.text.trim();
     final email = _emailController.text.trim().toLowerCase();
     final password = _passwordController.text;
 
@@ -53,12 +54,12 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     final success = ref.read(authViewModelProvider.notifier).signup(user);
 
     if (!success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Username is already taken')),
-      );
+      AppFeedback.error(context, 'Username is already taken');
 
       return;
     }
+
+    AppFeedback.success(context, 'Account created successfully!');
 
     Navigator.pop(context);
   }

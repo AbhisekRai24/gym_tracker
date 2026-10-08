@@ -11,6 +11,20 @@ import '../../workouts/views/workout_session_screen.dart';
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
+  Workout? _findWorkout(List<Workout> workouts, String? workoutId) {
+    if (workoutId == null) {
+      return null;
+    }
+
+    for (final workout in workouts) {
+      if (workout.id == workoutId) {
+        return workout;
+      }
+    }
+
+    return null;
+  }
+
   String _getWorkoutName(List<Workout> workouts, String workoutId) {
     for (final workout in workouts) {
       if (workout.id == workoutId) {
@@ -25,9 +39,14 @@ class HomeScreen extends ConsumerWidget {
     return '${date.day}/${date.month}/${date.year}';
   }
 
-  bool _hasWorkoutOnDay(List<WorkoutSession> sessions, DateTime day) {
+  bool _hasWorkoutOnDay(
+    List<WorkoutSession> sessions,
+    DateTime day,
+    String workoutId,
+  ) {
     return sessions.any((session) {
-      return session.date.year == day.year &&
+      return session.workoutId == workoutId &&
+          session.date.year == day.year &&
           session.date.month == day.month &&
           session.date.day == day.day;
     });
@@ -44,10 +63,7 @@ class HomeScreen extends ConsumerWidget {
     final todayIndex = today.weekday % 7;
 
     final todayWorkoutId = schedule.workoutForDay(todayIndex);
-
-    final todayWorkout = todayWorkoutId == null
-        ? null
-        : workouts.firstWhere((workout) => workout.id == todayWorkoutId);
+    final todayWorkout = _findWorkout(workouts, todayWorkoutId);
 
     final startOfWeek = today.subtract(Duration(days: today.weekday % 7));
     final totalSets = sessions.fold<int>(
@@ -161,9 +177,29 @@ class HomeScreen extends ConsumerWidget {
                     final day = startOfWeek.add(Duration(days: index));
 
                     const dayLabels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+                    final scheduledWorkoutId = schedule.workoutForDay(index);
+
+                    final scheduledWorkout = _findWorkout(
+                      workouts,
+                      scheduledWorkoutId,
+                    );
+
+                    final scheduled = scheduledWorkout != null;
+
+                    final completed =
+                        scheduledWorkoutId != null &&
+                        _hasWorkoutOnDay(sessions, day, scheduledWorkoutId);
+
+                    final isToday =
+                        day.year == today.year &&
+                        day.month == today.month &&
+                        day.day == today.day;
+
                     return _DayIndicator(
                       day: dayLabels[index],
-                      completed: _hasWorkoutOnDay(sessions, day),
+                      scheduled: scheduled,
+                      completed: completed,
+                      isToday: isToday,
                     );
                   }),
                 ),
@@ -229,22 +265,58 @@ class HomeScreen extends ConsumerWidget {
 
 class _DayIndicator extends StatelessWidget {
   final String day;
+  final bool scheduled;
   final bool completed;
+  final bool isToday;
 
-  const _DayIndicator({required this.day, required this.completed});
+  const _DayIndicator({
+    required this.day,
+    required this.scheduled,
+    required this.completed,
+    required this.isToday,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    IconData? icon;
+    Color backgroundColor;
+
+    if (completed) {
+      icon = Icons.check;
+      backgroundColor = Colors.green;
+    } else if (scheduled) {
+      icon = Icons.fitness_center;
+      backgroundColor = colorScheme.primary;
+    } else {
+      icon = Icons.bed_outlined;
+      backgroundColor = Colors.grey.shade300;
+    }
+
     return Column(
       children: [
         Text(day, style: const TextStyle(fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
-        CircleAvatar(
-          radius: 16,
-          backgroundColor: completed ? Colors.green : Colors.grey.shade300,
-          child: completed
-              ? const Icon(Icons.check, color: Colors.white, size: 18)
-              : null,
+        Container(
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: isToday
+                ? Border.all(color: colorScheme.primary, width: 2)
+                : null,
+          ),
+          padding: const EdgeInsets.all(2),
+          child: CircleAvatar(
+            radius: 16,
+            backgroundColor: backgroundColor,
+            child: Icon(
+              icon,
+              color: completed || scheduled
+                  ? Colors.white
+                  : Colors.grey.shade600,
+              size: 17,
+            ),
+          ),
         ),
       ],
     );

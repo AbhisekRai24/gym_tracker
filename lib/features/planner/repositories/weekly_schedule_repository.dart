@@ -42,4 +42,14 @@ class WeeklyScheduleRepository {
       await _box.put(secondDay.toString(), firstWorkout);
     }
   }
+
+  Future<void> removeWorkout(String workoutId) async {
+    for (int day = 0; day < 7; day++) {
+      final scheduledWorkoutId = _box.get(day.toString());
+
+      if (scheduledWorkoutId == workoutId) {
+        await _box.delete(day.toString());
+      }
+    }
+  }
 }

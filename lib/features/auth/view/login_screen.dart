@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:gym_track/core/widgets/app_feedback.dart';
 import 'package:gym_track/features/auth/viewmodel/auth_viewmodel.dart';
 
 import 'signup_screen.dart';
@@ -46,12 +47,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         .login(email, password);
 
     if (!success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Incorrect email or password')),
-      );
+      AppFeedback.error(context, 'Incorrect email or password');
 
       return;
     }
+
+    AppFeedback.success(context, 'Welcome back!');
   }
 
   Future<void> _openSignup() async {

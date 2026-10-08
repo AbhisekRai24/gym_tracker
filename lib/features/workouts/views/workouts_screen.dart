@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:gym_track/core/widgets/app_feedback.dart';
+import 'package:gym_track/features/planner/viewmodels/weekly_schedule_viewmodel.dart';
 
 import 'package:gym_track/features/workouts/viewmodels/workout_viewmodel.dart';
 import 'package:gym_track/features/workouts/widgets/workout_card.dart';
@@ -37,33 +39,29 @@ class WorkoutsScreen extends ConsumerWidget {
     WidgetRef ref,
     Workout workout,
   ) async {
-    final shouldDelete = await showDialog<bool>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Delete Workout?'),
-          content: Text('Are you sure you want to delete "${workout.name}"?'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context, false);
-              },
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () {
-                Navigator.pop(context, true);
-              },
-              child: const Text('Delete'),
-            ),
-          ],
-        );
-      },
+    final shouldDelete = await AppFeedback.confirm(
+      context,
+      title: 'Delete Workout?',
+      message: 'Are you sure you want to delete "${workout.name}"?',
+      confirmText: 'Delete',
+      destructive: true,
     );
 
-    if (shouldDelete == true) {
-      ref.read(workoutViewModelProvider.notifier).deleteWorkout(workout.id);
+    if (!shouldDelete) {
+      return;
     }
+
+    ref.read(workoutViewModelProvider.notifier).deleteWorkout(workout.id);
+
+    await ref
+        .read(weeklyScheduleViewModelProvider.notifier)
+        .removeWorkout(workout.id);
+
+    if (!context.mounted) {
+      return;
+    }
+
+    AppFeedback.success(context, 'Workout deleted');
   }
 
   @override

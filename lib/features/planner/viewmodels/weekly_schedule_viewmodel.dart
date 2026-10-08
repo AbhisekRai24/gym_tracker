@@ -45,4 +45,10 @@ class WeeklyScheduleViewModel extends Notifier<WeeklySchedule> {
 
     state = _repository.getSchedule();
   }
+
+  Future<void> removeWorkout(String workoutId) async {
+    await _repository.removeWorkout(workoutId);
+
+    state = _repository.getSchedule();
+  }
 }

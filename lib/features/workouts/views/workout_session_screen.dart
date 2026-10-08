@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gym_track/core/widgets/app_feedback.dart';
 import '../models/workout.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -53,9 +54,7 @@ class _WorkoutSessionScreenState extends ConsumerState<WorkoutSessionScreen> {
     final reps = int.tryParse(repsText);
 
     if (weight == null || reps == null || reps <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter valid weight and reps')),
-      );
+      AppFeedback.error(context, 'Enter valid weight and reps');
       return;
     }
 
@@ -73,9 +72,7 @@ class _WorkoutSessionScreenState extends ConsumerState<WorkoutSessionScreen> {
     final allSets = _loggedSets.values.expand((sets) => sets).toList();
 
     if (allSets.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Log at least one set before completing')),
-      );
+      AppFeedback.info(context, 'Log at least one set before completing');
       return;
     }
 

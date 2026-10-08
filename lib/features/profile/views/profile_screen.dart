@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:gym_track/core/widgets/app_feedback.dart';
 import 'package:gym_track/features/planner/views/weekly_planner_screen.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -140,6 +141,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             leading: const Icon(Icons.logout),
             title: const Text('Logout'),
             onTap: () {
+              AppFeedback.success(context, 'Logged out successfully');
+
               ref.read(authViewModelProvider.notifier).logout();
             },
           ),
