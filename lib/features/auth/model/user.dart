@@ -4,7 +4,6 @@ class User {
   final String passwordHash;
   final String? avatarPath;
 
-
   const User({
     required this.username,
     required this.email,

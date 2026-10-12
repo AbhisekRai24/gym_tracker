@@ -4,10 +4,7 @@ import 'package:gym_track/features/progress/models/exercise_progress.dart';
 class ProgressChart extends StatelessWidget {
   final List<ExerciseProgress> data;
 
-  const ProgressChart({
-    super.key,
-    required this.data,
-  });
+  const ProgressChart({super.key, required this.data});
 
   @override
   Widget build(BuildContext context) {
@@ -60,7 +57,7 @@ class _ProgressChartPainter extends CustomPainter {
     final weights = data.map((item) => item.weight).toList();
     final minWeight = weights.reduce((a, b) => a < b ? a : b);
     final maxWeight = weights.reduce((a, b) => a > b ? a : b);
-    
+
     // Add safety margin to min/max so curve doesn't clip top/bottom bounds
     final range = maxWeight - minWeight;
     final paddingMargin = range == 0 ? 5.0 : range * 0.15;
@@ -127,14 +124,17 @@ class _ProgressChartPainter extends CustomPainter {
 
     // Draw Smooth Gradient Fill Underneath Line
     final fillPaint = Paint()
-      ..shader = LinearGradient(
-        colors: [
-          lineColor.withValues(alpha: 0.35),
-          lineColor.withValues(alpha: 0.0),
-        ],
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-      ).createShader(Rect.fromLTWH(leftPadding, topPadding, chartWidth, chartHeight));
+      ..shader =
+          LinearGradient(
+            colors: [
+              lineColor.withValues(alpha: 0.35),
+              lineColor.withValues(alpha: 0.0),
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ).createShader(
+            Rect.fromLTWH(leftPadding, topPadding, chartWidth, chartHeight),
+          );
 
     canvas.drawPath(fillPath, fillPaint);
 
@@ -162,18 +162,30 @@ class _ProgressChartPainter extends CustomPainter {
     );
 
     final maxTextPainter = TextPainter(
-      text: TextSpan(text: '${maxWeight.toStringAsFixed(0)}kg', style: textStyle),
+      text: TextSpan(
+        text: '${maxWeight.toStringAsFixed(0)}kg',
+        style: textStyle,
+      ),
       textDirection: TextDirection.ltr,
     )..layout();
 
-    maxTextPainter.paint(canvas, Offset(0, topPadding - maxTextPainter.height / 2));
+    maxTextPainter.paint(
+      canvas,
+      Offset(0, topPadding - maxTextPainter.height / 2),
+    );
 
     final minTextPainter = TextPainter(
-      text: TextSpan(text: '${minWeight.toStringAsFixed(0)}kg', style: textStyle),
+      text: TextSpan(
+        text: '${minWeight.toStringAsFixed(0)}kg',
+        style: textStyle,
+      ),
       textDirection: TextDirection.ltr,
     )..layout();
 
-    minTextPainter.paint(canvas, Offset(0, topPadding + chartHeight - minTextPainter.height / 2));
+    minTextPainter.paint(
+      canvas,
+      Offset(0, topPadding + chartHeight - minTextPainter.height / 2),
+    );
   }
 
   @override

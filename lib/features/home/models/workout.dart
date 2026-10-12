@@ -9,11 +9,7 @@ class Workout {
     this.exercises = const [],
   });
 
-  Workout copyWith({
-    String? id,
-    String? name,
-    List<String>? exercises,
-  }) {
+  Workout copyWith({String? id, String? name, List<String>? exercises}) {
     return Workout(
       id: id ?? this.id,
       name: name ?? this.name,

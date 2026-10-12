@@ -12,17 +12,11 @@ class ExerciseRepository {
   }
 
   void addExercise(Exercise exercise) {
-    _box.put(
-      exercise.id,
-      _toMap(exercise),
-    );
+    _box.put(exercise.id, _toMap(exercise));
   }
 
   void updateExercise(Exercise exercise) {
-    _box.put(
-      exercise.id,
-      _toMap(exercise),
-    );
+    _box.put(exercise.id, _toMap(exercise));
   }
 
   void deleteExercise(String exerciseId) {

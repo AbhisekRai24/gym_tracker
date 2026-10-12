@@ -2,10 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gym_track/core/storage/hive_boxes.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
-
 import '../models/exercise.dart';
 import '../repositories/exercise_repository.dart';
-
 
 final exerciseRepositoryProvider = Provider<ExerciseRepository>((ref) {
   final box = Hive.box(HiveBoxes.exercises);

@@ -1,4 +1,3 @@
-
 import 'package:hive_flutter/hive_flutter.dart';
 
 import '../model/user.dart';
@@ -8,8 +7,7 @@ class AuthRepository {
 
   AuthRepository(this._box);
 
-  bool get isLoggedIn =>
-      _box.get('isLoggedIn', defaultValue: false) as bool;
+  bool get isLoggedIn => _box.get('isLoggedIn', defaultValue: false) as bool;
 
   User? getUser() {
     final username = _box.get('username');

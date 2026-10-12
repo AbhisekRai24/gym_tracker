@@ -3,40 +3,18 @@ import 'package:flutter/material.dart';
 class AppFeedback {
   AppFeedback._();
 
-  static final messengerKey =
-      GlobalKey<ScaffoldMessengerState>();
+  static final messengerKey = GlobalKey<ScaffoldMessengerState>();
 
-  static void success(
-    BuildContext context,
-    String message,
-  ) {
-    _showSnackBar(
-      context,
-      message,
-      Icons.check_circle_outline,
-    );
+  static void success(BuildContext context, String message) {
+    _showSnackBar(context, message, Icons.check_circle_outline);
   }
 
-  static void error(
-    BuildContext context,
-    String message,
-  ) {
-    _showSnackBar(
-      context,
-      message,
-      Icons.error_outline,
-    );
+  static void error(BuildContext context, String message) {
+    _showSnackBar(context, message, Icons.error_outline);
   }
 
-  static void info(
-    BuildContext context,
-    String message,
-  ) {
-    _showSnackBar(
-      context,
-      message,
-      Icons.info_outline,
-    );
+  static void info(BuildContext context, String message) {
+    _showSnackBar(context, message, Icons.info_outline);
   }
 
   static void _showSnackBar(
@@ -45,8 +23,7 @@ class AppFeedback {
     IconData icon,
   ) {
     final messenger =
-        messengerKey.currentState ??
-        ScaffoldMessenger.maybeOf(context);
+        messengerKey.currentState ?? ScaffoldMessenger.maybeOf(context);
 
     if (messenger == null) {
       return;
@@ -58,14 +35,9 @@ class AppFeedback {
         SnackBar(
           content: Row(
             children: [
-              Icon(
-                icon,
-                color: Colors.white,
-              ),
+              Icon(icon, color: Colors.white),
               const SizedBox(width: 12),
-              Expanded(
-                child: Text(message),
-              ),
+              Expanded(child: Text(message)),
             ],
           ),
           behavior: SnackBarBehavior.floating,
@@ -97,9 +69,7 @@ class AppFeedback {
             ),
             FilledButton(
               style: destructive
-                  ? FilledButton.styleFrom(
-                      backgroundColor: Colors.red,
-                    )
+                  ? FilledButton.styleFrom(backgroundColor: Colors.red)
                   : null,
               onPressed: () {
                 Navigator.pop(context, true);

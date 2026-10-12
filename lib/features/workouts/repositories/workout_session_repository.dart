@@ -44,16 +44,13 @@ class WorkoutSessionRepository {
       );
     }).toList();
 
-    final durationMilliseconds =
-        (map['duration'] as num?)?.toInt() ?? 0;
+    final durationMilliseconds = (map['duration'] as num?)?.toInt() ?? 0;
 
     return WorkoutSession(
       id: map['id'] as String,
       workoutId: map['workoutId'] as String,
       date: DateTime.parse(map['date'] as String),
-      duration: Duration(
-        milliseconds: durationMilliseconds,
-      ),
+      duration: Duration(milliseconds: durationMilliseconds),
       sets: sets,
     );
   }

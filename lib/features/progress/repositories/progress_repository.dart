@@ -2,9 +2,7 @@ import '../../workouts/models/workout_session.dart';
 import '../models/exercise_progress.dart';
 
 class ProgressRepository {
-  List<ExerciseProgress> getExerciseProgress(
-    List<WorkoutSession> sessions,
-  ) {
+  List<ExerciseProgress> getExerciseProgress(List<WorkoutSession> sessions) {
     final progress = <ExerciseProgress>[];
 
     for (final session in sessions) {
