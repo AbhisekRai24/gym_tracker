@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/workout.dart';
 import '../viewmodels/workout_viewmodel.dart';
-import 'exercise_picker_screen.dart';
 
 class EditWorkoutScreen extends ConsumerStatefulWidget {
   final Workout workout;
@@ -20,7 +19,6 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
   @override
   void initState() {
     super.initState();
-
     _nameController = TextEditingController(text: widget.workout.name);
   }
 
@@ -49,87 +47,118 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final workouts = ref.watch(workoutViewModelProvider);
-
-    final workout = workouts.firstWhere(
-      (workout) => workout.id == widget.workout.id,
-    );
+    final theme = Theme.of(context);
+    final primaryColor = theme.colorScheme.primary;
+    final onPrimaryColor = theme.colorScheme.onPrimary;
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Edit Workout')),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
+      appBar: AppBar(
+        centerTitle: false,
+        title: Text(
+          'Edit Workout',
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+            letterSpacing: -0.3,
+          ),
+        ),
+      ),
+      body: SafeArea(
+        child: ListView(
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.all(20),
           children: [
-            TextField(
-              controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: 'Workout Name',
-                border: OutlineInputBorder(),
+            // Top Header Icon Card
+            Center(
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: primaryColor.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.edit_rounded, size: 40, color: primaryColor),
               ),
             ),
+            const SizedBox(height: 28),
 
-            const SizedBox(height: 24),
-
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'Exercises',
-                style: Theme.of(context).textTheme.titleLarge,
+            // Form Fields Container Card
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: isDark ? Colors.white10 : Colors.black12,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
               ),
-            ),
-
-            const SizedBox(height: 12),
-
-            Expanded(
-              child: workout.exercises.isEmpty
-                  ? const Center(child: Text('No exercises yet'))
-                  : ListView.builder(
-                      itemCount: workout.exercises.length,
-                      itemBuilder: (context, index) {
-                        final exercise = workout.exercises[index];
-
-                        return Card(
-                          child: ListTile(
-                            title: Text(exercise),
-                            trailing: IconButton(
-                              icon: const Icon(Icons.delete_outline),
-                              onPressed: () {
-                                ref
-                                    .read(workoutViewModelProvider.notifier)
-                                    .removeExercise(workout.id, exercise);
-                              },
-                            ),
-                          ),
-                        );
-                      },
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Workout Routine',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
                     ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: _nameController,
+                    decoration: InputDecoration(
+                      labelText: 'Workout Name',
+                      hintText: 'e.g. Push Day',
+                      prefixIcon: Icon(
+                        Icons.bookmark_border_rounded,
+                        color: primaryColor,
+                      ),
+                      filled: true,
+                      fillColor: isDark
+                          ? Colors.white.withValues(alpha: 0.03)
+                          : Colors.grey.shade50,
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: primaryColor, width: 2),
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
 
+            const SizedBox(height: 32),
+
+            // Save Action Button
             SizedBox(
               width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () async {
-                  await Navigator.push<String>(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          ExercisePickerScreen(workoutId: workout.id),
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.add),
-                label: const Text('ADD EXERCISE'),
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
+              height: 52,
+              child: FilledButton.icon(
+                style: FilledButton.styleFrom(
+                  backgroundColor: primaryColor,
+                  foregroundColor: onPrimaryColor,
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
                 onPressed: _saveWorkout,
-                child: const Text('SAVE CHANGES'),
+                icon: const Icon(Icons.save_rounded),
+                label: const Text(
+                  'SAVE CHANGES',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                    letterSpacing: 0.5,
+                  ),
+                ),
               ),
             ),
           ],

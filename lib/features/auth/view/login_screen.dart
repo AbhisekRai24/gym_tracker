@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gym_track/core/widgets/app_feedback.dart';
+import 'package:gym_track/features/auth/view/forgot_password_screen.dart';
 import 'package:gym_track/features/auth/viewmodel/auth_viewmodel.dart';
 
 import 'signup_screen.dart';
@@ -59,6 +60,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     await Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const SignupScreen()),
+    );
+  }
+
+  Future<void> _openForgotPassword() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const ForgotPasswordScreen()),
     );
   }
 
@@ -156,6 +164,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
 
                 const SizedBox(height: 16),
+                Center(
+                  child: TextButton(
+                    onPressed: _openForgotPassword,
+                    child: const Text('Forgot password?'),
+                  ),
+                ),
 
                 Center(
                   child: TextButton(

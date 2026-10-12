@@ -16,23 +16,27 @@ final authViewModelProvider = NotifierProvider<AuthViewModel, bool>(
 );
 
 class AuthViewModel extends Notifier<bool> {
-  late final AuthRepository _repository;
+  // Read repository on demand
+  AuthRepository get _repository => ref.read(authRepositoryProvider);
 
   @override
   bool build() {
-    _repository = ref.watch(authRepositoryProvider);
-
-    return _repository.isLoggedIn;
+    return ref.watch(authRepositoryProvider).isLoggedIn;
   }
 
   bool signup(User user) {
-    if (_repository.usernameExists(user.username)) {
+    if (_repository.usernameExists(user.username) ||
+        _repository.emailExists(user.email)) {
       return false;
     }
 
-    _repository.saveUser(user);
-    _repository.setLoggedIn(true);
+    final saved = _repository.saveUser(user);
 
+    if (!saved) {
+      return false;
+    }
+
+    _repository.setLoggedIn(true);
     state = true;
 
     return true;
@@ -41,15 +45,9 @@ class AuthViewModel extends Notifier<bool> {
   bool login(String email, String passwordHash) {
     final user = _repository.getUser();
 
-    if (user == null) {
-      return false;
-    }
-
-    if (user.email != email) {
-      return false;
-    }
-
-    if (user.passwordHash != passwordHash) {
+    if (user == null ||
+        user.email.toLowerCase() != email.trim().toLowerCase() ||
+        user.passwordHash != passwordHash) {
       return false;
     }
 
@@ -59,19 +57,27 @@ class AuthViewModel extends Notifier<bool> {
     return true;
   }
 
+  bool resetPassword(String identifier, String newPasswordHash) {
+    return _repository.resetPassword(identifier, newPasswordHash);
+  }
+
   void logout() {
     _repository.logout();
-
     state = false;
   }
 
   bool updateUsername(String newUsername) {
-    return _repository.updateUsername(newUsername);
+    final success = _repository.updateUsername(newUsername);
+    if (success) {
+      // Re-trigger Riverpod notification if needed
+      ref.notifyListeners();
+    }
+    return success;
   }
 
   void updateAvatar(String avatarPath) {
     _repository.updateAvatar(avatarPath);
-
-    ref.invalidate(authRepositoryProvider);
+    // Force Riverpod to notify UI widgets watching this state to rebuild with new image
+    ref.notifyListeners();
   }
 }

@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../viewmodels/workout_viewmodel.dart';
 import 'exercise_picker_screen.dart';
-
 import 'workout_session_screen.dart';
 
 class WorkoutDetailScreen extends ConsumerWidget {
@@ -17,83 +16,259 @@ class WorkoutDetailScreen extends ConsumerWidget {
 
     final workout = workouts.firstWhere((workout) => workout.id == workoutId);
 
+    final theme = Theme.of(context);
+    final primaryColor = theme.colorScheme.primary;
+    final onPrimaryColor = theme.colorScheme.onPrimary;
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      appBar: AppBar(title: Text(workout.name)),
+      appBar: AppBar(
+        centerTitle: false,
+        title: Text(
+          workout.name,
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+            letterSpacing: -0.3,
+          ),
+        ),
+      ),
       body: workout.exercises.isEmpty
-          ? const Center(
-              child: Text(
-                'No exercises yet',
-                style: TextStyle(fontSize: 18, color: Colors.grey),
+          ? Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(32),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: primaryColor.withValues(alpha: 0.12),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.fitness_center_rounded,
+                        size: 48,
+                        color: primaryColor,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Text(
+                      'No Exercises Yet',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Add exercises to this workout routine to start training.',
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.textTheme.bodyMedium?.color?.withValues(
+                          alpha: 0.6,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                ExercisePickerScreen(workoutId: workoutId),
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: primaryColor,
+                        foregroundColor: onPrimaryColor,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 14,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 0,
+                      ),
+                      icon: const Icon(Icons.add_rounded),
+                      label: const Text(
+                        'Add First Exercise',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             )
-          : ListView.builder(
-              padding: const EdgeInsets.all(16),
+          : ReorderableListView.builder(
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 160),
+              buildDefaultDragHandles: false,
               itemCount: workout.exercises.length,
+              onReorder: (oldIndex, newIndex) {
+                if (newIndex > oldIndex) {
+                  newIndex -= 1;
+                }
+
+                final reorderedExercises = List<String>.from(workout.exercises);
+                final exercise = reorderedExercises.removeAt(oldIndex);
+                reorderedExercises.insert(newIndex, exercise);
+
+                ref
+                    .read(workoutViewModelProvider.notifier)
+                    .reorderExercises(workoutId, reorderedExercises);
+              },
               itemBuilder: (context, index) {
                 final exercise = workout.exercises[index];
 
-                return Card(
-                  child: ListTile(
-                    leading: const CircleAvatar(
-                      child: Icon(Icons.fitness_center),
+                return Container(
+                  key: ValueKey(exercise),
+                  margin: const EdgeInsets.only(bottom: 12),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: isDark ? Colors.white10 : Colors.black12,
                     ),
-                    title: Text(
-                      exercise,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.delete_outline),
-                      onPressed: () {
-                        ref
-                            .read(workoutViewModelProvider.notifier)
-                            .removeExercise(workoutId, exercise);
-                      },
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(
+                          alpha: isDark ? 0.2 : 0.05,
+                        ),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    borderRadius: BorderRadius.circular(16),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 12,
+                      ),
+                      child: Row(
+                        children: [
+                          // Step index badge
+                          CircleAvatar(
+                            radius: 15,
+                            backgroundColor: primaryColor.withValues(
+                              alpha: 0.15,
+                            ),
+                            child: Text(
+                              '${index + 1}',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: primaryColor,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+
+                          // Exercise title
+                          Expanded(
+                            child: Text(
+                              exercise,
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: -0.2,
+                              ),
+                            ),
+                          ),
+
+                          // Action Buttons & Reorder Handle
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: Icon(
+                                  Icons.delete_outline_rounded,
+                                  color: theme.colorScheme.error,
+                                  size: 20,
+                                ),
+                                tooltip: 'Remove exercise',
+                                onPressed: () {
+                                  ref
+                                      .read(workoutViewModelProvider.notifier)
+                                      .removeExercise(workoutId, exercise);
+                                },
+                              ),
+                              ReorderableDragStartListener(
+                                index: index,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8),
+                                  child: Icon(
+                                    Icons.drag_indicator_rounded,
+                                    color: theme.textTheme.bodySmall?.color
+                                        ?.withValues(alpha: 0.4),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 );
               },
             ),
-      floatingActionButton: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          FloatingActionButton.extended(
-            heroTag: 'startWorkout',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => WorkoutSessionScreen(workout: workout),
+
+      // Stacked Action FABs
+      floatingActionButton: workout.exercises.isEmpty
+          ? null
+          : Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                FloatingActionButton.extended(
+                  heroTag: 'addExercise',
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            ExercisePickerScreen(workoutId: workoutId),
+                      ),
+                    );
+                  },
+                  backgroundColor: isDark
+                      ? const Color(0xFF1E293B)
+                      : Colors.grey.shade200,
+                  foregroundColor: theme.textTheme.bodyLarge?.color,
+                  elevation: 2,
+                  icon: const Icon(Icons.add_rounded),
+                  label: const Text(
+                    'Add Exercise',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
                 ),
-              );
-            },
-            icon: const Icon(Icons.play_arrow),
-            label: const Text('Start Workout'),
-          ),
-
-          const SizedBox(height: 12),
-
-          FloatingActionButton.extended(
-            heroTag: 'addExercise',
-            onPressed: () async {
-              final exercise = await Navigator.push<String>(
-                context,
-                MaterialPageRoute(
-                  builder: (context) =>
-                      ExercisePickerScreen(workoutId: workoutId),
+                const SizedBox(height: 12),
+                FloatingActionButton.extended(
+                  heroTag: 'startWorkout',
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            WorkoutSessionScreen(workout: workout),
+                      ),
+                    );
+                  },
+                  backgroundColor: primaryColor,
+                  foregroundColor: onPrimaryColor,
+                  elevation: 4,
+                  icon: const Icon(Icons.play_arrow_rounded),
+                  label: const Text(
+                    'Start Workout',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                 ),
-              );
-
-              if (exercise != null) {
-                ref
-                    .read(workoutViewModelProvider.notifier)
-                    .addExercise(workoutId, exercise);
-              }
-            },
-            icon: const Icon(Icons.add),
-            label: const Text('Add Exercise'),
-          ),
-        ],
-      ),
+              ],
+            ),
     );
   }
 }

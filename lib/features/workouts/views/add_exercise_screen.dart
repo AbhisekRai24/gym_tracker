@@ -15,7 +15,6 @@ class AddExerciseScreen extends ConsumerStatefulWidget {
 
 class _AddExerciseScreenState extends ConsumerState<AddExerciseScreen> {
   final _formKey = GlobalKey<FormState>();
-
   final _nameController = TextEditingController();
 
   String _selectedMuscleGroup = 'Chest';
@@ -43,12 +42,6 @@ class _AddExerciseScreenState extends ConsumerState<AddExerciseScreen> {
   ];
 
   @override
-  void dispose() {
-    _nameController.dispose();
-    super.dispose();
-  }
-
-  @override
   void initState() {
     super.initState();
 
@@ -59,6 +52,12 @@ class _AddExerciseScreenState extends ConsumerState<AddExerciseScreen> {
       _selectedMuscleGroup = exercise.muscleGroup;
       _selectedEquipment = exercise.equipment;
     }
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
   }
 
   void _saveExercise() {
@@ -94,81 +93,202 @@ class _AddExerciseScreenState extends ConsumerState<AddExerciseScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final primaryColor = theme.colorScheme.primary;
+    final onPrimaryColor = theme.colorScheme.onPrimary;
+    final isDark = theme.brightness == Brightness.dark;
+    final isEditing = widget.exercise != null;
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.exercise == null ? 'Add Exercise' : 'Edit Exercise'),
+        centerTitle: false,
+        title: Text(
+          isEditing ? 'Edit Exercise' : 'Add Exercise',
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+            letterSpacing: -0.3,
+          ),
+        ),
       ),
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.all(20),
           children: [
-            TextFormField(
-              controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: 'Exercise Name',
-                hintText: 'e.g. Incline Dumbbell Press',
-                border: OutlineInputBorder(),
+            // Top Header Icon Card
+            Center(
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: primaryColor.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  isEditing ? Icons.edit_rounded : Icons.fitness_center_rounded,
+                  size: 40,
+                  color: primaryColor,
+                ),
               ),
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Enter an exercise name';
-                }
-
-                return null;
-              },
             ),
+            const SizedBox(height: 28),
 
-            const SizedBox(height: 20),
-
-            DropdownButtonFormField<String>(
-              value: _selectedMuscleGroup,
-              decoration: const InputDecoration(
-                labelText: 'Muscle Group',
-                border: OutlineInputBorder(),
+            // Form Fields Container Card
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: isDark ? Colors.white10 : Colors.black12,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
               ),
-              items: muscleGroups.map((group) {
-                return DropdownMenuItem(value: group, child: Text(group));
-              }).toList(),
-              onChanged: (value) {
-                if (value == null) return;
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Exercise Details',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
 
-                setState(() {
-                  _selectedMuscleGroup = value;
-                });
-              },
-            ),
+                  // Exercise Name Field
+                  TextFormField(
+                    controller: _nameController,
+                    decoration: InputDecoration(
+                      labelText: 'Exercise Name',
+                      hintText: 'e.g. Incline Dumbbell Press',
+                      prefixIcon: Icon(
+                        Icons.fitness_center_rounded,
+                        color: primaryColor,
+                      ),
+                      filled: true,
+                      fillColor: isDark
+                          ? Colors.white.withValues(alpha: 0.03)
+                          : Colors.grey.shade50,
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: primaryColor, width: 2),
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Enter an exercise name';
+                      }
+                      return null;
+                    },
+                  ),
 
-            const SizedBox(height: 20),
+                  const SizedBox(height: 20),
 
-            DropdownButtonFormField<String>(
-              value: _selectedEquipment,
-              decoration: const InputDecoration(
-                labelText: 'Equipment',
-                border: OutlineInputBorder(),
+                  // Muscle Group Dropdown
+                  DropdownButtonFormField<String>(
+                    value: _selectedMuscleGroup,
+                    decoration: InputDecoration(
+                      labelText: 'Muscle Group',
+                      prefixIcon: Icon(
+                        Icons.category_rounded,
+                        color: primaryColor,
+                      ),
+                      filled: true,
+                      fillColor: isDark
+                          ? Colors.white.withValues(alpha: 0.03)
+                          : Colors.grey.shade50,
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: primaryColor, width: 2),
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    items: muscleGroups.map((group) {
+                      return DropdownMenuItem(value: group, child: Text(group));
+                    }).toList(),
+                    onChanged: (value) {
+                      if (value == null) return;
+                      setState(() {
+                        _selectedMuscleGroup = value;
+                      });
+                    },
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // Equipment Dropdown
+                  DropdownButtonFormField<String>(
+                    value: _selectedEquipment,
+                    decoration: InputDecoration(
+                      labelText: 'Equipment',
+                      prefixIcon: Icon(
+                        Icons.build_rounded,
+                        color: primaryColor,
+                      ),
+                      filled: true,
+                      fillColor: isDark
+                          ? Colors.white.withValues(alpha: 0.03)
+                          : Colors.grey.shade50,
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: primaryColor, width: 2),
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    items: equipmentOptions.map((equipment) {
+                      return DropdownMenuItem(
+                        value: equipment,
+                        child: Text(equipment),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      if (value == null) return;
+                      setState(() {
+                        _selectedEquipment = value;
+                      });
+                    },
+                  ),
+                ],
               ),
-              items: equipmentOptions.map((equipment) {
-                return DropdownMenuItem(
-                  value: equipment,
-                  child: Text(equipment),
-                );
-              }).toList(),
-              onChanged: (value) {
-                if (value == null) return;
-
-                setState(() {
-                  _selectedEquipment = value;
-                });
-              },
             ),
 
             const SizedBox(height: 32),
 
-            FilledButton.icon(
-              onPressed: _saveExercise,
-              icon: const Icon(Icons.add),
-              label: Text(
-                widget.exercise == null ? 'Add Exercise' : 'Save Changes',
+            // Save Action Button
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: FilledButton.icon(
+                style: FilledButton.styleFrom(
+                  backgroundColor: primaryColor,
+                  foregroundColor: onPrimaryColor,
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                onPressed: _saveExercise,
+                icon: Icon(isEditing ? Icons.save_rounded : Icons.add_rounded),
+                label: Text(
+                  isEditing ? 'Save Changes' : 'Add Exercise',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
               ),
             ),
           ],

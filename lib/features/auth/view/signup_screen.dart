@@ -54,8 +54,10 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     final success = ref.read(authViewModelProvider.notifier).signup(user);
 
     if (!success) {
-      AppFeedback.error(context, 'Username is already taken');
-
+      AppFeedback.error(
+        context,
+        'Username or email already exists. Please log in instead.',
+      );
       return;
     }
 

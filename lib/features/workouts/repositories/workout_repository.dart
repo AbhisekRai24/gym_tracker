@@ -7,10 +7,6 @@ class WorkoutRepository {
   WorkoutRepository(this._box);
 
   List<Workout> getWorkouts() {
-    if (_box.isEmpty) {
-      _seedInitialWorkouts();
-    }
-
     return _box.values.map(_fromMap).toList();
   }
 
@@ -77,29 +73,5 @@ class WorkoutRepository {
       name: map['name'] as String,
       exercises: List<String>.from(map['exercises'] as List),
     );
-  }
-
-  void _seedInitialWorkouts() {
-    const workouts = [
-      Workout(
-        id: '1',
-        name: 'Upper Body',
-        exercises: ['Bench Press', 'Barbell Row', 'Shoulder Press'],
-      ),
-      Workout(
-        id: '2',
-        name: 'Lower Body',
-        exercises: ['Barbell Squat', 'Leg Press', 'Romanian Deadlift'],
-      ),
-      Workout(
-        id: '3',
-        name: 'Full Body',
-        exercises: ['Barbell Squat', 'Bench Press', 'Barbell Row'],
-      ),
-    ];
-
-    for (final workout in workouts) {
-      _box.put(workout.id, _toMap(workout));
-    }
   }
 }

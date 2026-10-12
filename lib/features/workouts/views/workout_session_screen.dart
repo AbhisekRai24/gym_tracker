@@ -89,7 +89,6 @@ class _WorkoutSessionScreenState extends ConsumerState<WorkoutSessionScreen> {
     ref.read(workoutSessionViewModelProvider.notifier).addSession(session);
 
     final totalSets = allSets.length;
-
     final completedExercises = _loggedSets.entries
         .where((entry) => entry.value.isNotEmpty)
         .length;
@@ -114,31 +113,66 @@ class _WorkoutSessionScreenState extends ConsumerState<WorkoutSessionScreen> {
 
     if (!mounted) return;
 
+    final theme = Theme.of(context);
+    final primaryColor = theme.colorScheme.primary;
+
     await showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Workout Complete 🎉'),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Row(
+            children: [
+              Icon(Icons.emoji_events_rounded, color: primaryColor),
+              const SizedBox(width: 10),
+              const Text('Workout Complete 🎉'),
+            ],
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(widget.workout.name),
+              Text(
+                widget.workout.name,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: primaryColor,
+                ),
+              ),
               const SizedBox(height: 16),
-              Text('Duration: $durationText'),
-              Text('Exercises: $completedExercises'),
-              Text('Sets: $totalSets'),
-              Text('Best Lift: ${bestLift.toStringAsFixed(1)} kg'),
-              Text('Total Volume: ${totalVolume.toStringAsFixed(1)} kg'),
+              _buildSummaryRow(context, 'Duration', durationText),
+              _buildSummaryRow(context, 'Exercises', '$completedExercises'),
+              _buildSummaryRow(context, 'Total Sets', '$totalSets'),
+              _buildSummaryRow(
+                context,
+                'Best Lift',
+                '${bestLift.toStringAsFixed(1)} kg',
+              ),
+              _buildSummaryRow(
+                context,
+                'Total Volume',
+                '${totalVolume.toStringAsFixed(1)} kg',
+              ),
             ],
           ),
           actions: [
             FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: primaryColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
               onPressed: () {
                 Navigator.pop(context);
               },
-              child: const Text('DONE'),
+              child: const Text(
+                'DONE',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
           ],
         );
@@ -150,16 +184,78 @@ class _WorkoutSessionScreenState extends ConsumerState<WorkoutSessionScreen> {
     Navigator.pop(context);
   }
 
+  Widget _buildSummaryRow(BuildContext context, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              color: Theme.of(
+                context,
+              ).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
+            ),
+          ),
+          Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final primaryColor = theme.colorScheme.primary;
+    final onPrimaryColor = theme.colorScheme.onPrimary;
+
     return Scaffold(
-      appBar: AppBar(title: Text(widget.workout.name)),
+      appBar: AppBar(
+        centerTitle: false,
+        title: Text(
+          widget.workout.name,
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+            letterSpacing: -0.3,
+          ),
+        ),
+      ),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.all(20),
         children: [
-          const Text(
-            'Workout in Progress',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: primaryColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(Icons.timer_rounded, color: primaryColor, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Workout in Progress',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    'Log your sets and weights below',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.textTheme.bodySmall?.color?.withValues(
+                        alpha: 0.6,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
 
           const SizedBox(height: 24),
@@ -174,15 +270,33 @@ class _WorkoutSessionScreenState extends ConsumerState<WorkoutSessionScreen> {
             ),
           ),
 
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
 
           SizedBox(
             width: double.infinity,
-            child: FilledButton(
+            height: 52,
+            child: FilledButton.icon(
+              style: FilledButton.styleFrom(
+                backgroundColor: primaryColor,
+                foregroundColor: onPrimaryColor,
+                elevation: 2,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
               onPressed: _completeWorkout,
-              child: const Text('COMPLETE WORKOUT'),
+              icon: const Icon(Icons.check_circle_rounded),
+              label: const Text(
+                'COMPLETE WORKOUT',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                  letterSpacing: 0.5,
+                ),
+              ),
             ),
           ),
+          const SizedBox(height: 24),
         ],
       ),
     );
@@ -206,16 +320,53 @@ class _ExerciseSessionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    final theme = Theme.of(context);
+    final primaryColor = theme.colorScheme.primary;
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Container(
       margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: isDark ? Colors.white10 : Colors.black12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              exercise,
-              style: const TextStyle(fontSize: 19, fontWeight: FontWeight.bold),
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: primaryColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    Icons.fitness_center_rounded,
+                    color: primaryColor,
+                    size: 18,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    exercise,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
             ),
 
             const SizedBox(height: 16),
@@ -228,9 +379,19 @@ class _ExerciseSessionCard extends StatelessWidget {
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'Weight (kg)',
-                      border: OutlineInputBorder(),
+                      filled: true,
+                      fillColor: isDark
+                          ? Colors.white.withValues(alpha: 0.03)
+                          : Colors.grey.shade50,
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: primaryColor, width: 2),
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   ),
                 ),
@@ -241,41 +402,85 @@ class _ExerciseSessionCard extends StatelessWidget {
                   child: TextField(
                     controller: repsController,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'Reps',
-                      border: OutlineInputBorder(),
+                      filled: true,
+                      fillColor: isDark
+                          ? Colors.white.withValues(alpha: 0.03)
+                          : Colors.grey.shade50,
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: primaryColor, width: 2),
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   ),
                 ),
               ],
             ),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
 
             SizedBox(
               width: double.infinity,
-              child: OutlinedButton(
+              height: 44,
+              child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: primaryColor,
+                  side: BorderSide(color: primaryColor.withValues(alpha: 0.5)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
                 onPressed: onAddSet,
-                child: const Text('ADD SET'),
+                icon: const Icon(Icons.add_rounded, size: 18),
+                label: const Text(
+                  'ADD SET',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
+                  ),
+                ),
               ),
             ),
 
             if (sets.isNotEmpty) ...[
-              const SizedBox(height: 12),
-
-              const Divider(),
-
+              const SizedBox(height: 14),
+              Divider(color: isDark ? Colors.white10 : Colors.black12),
+              const SizedBox(height: 6),
               ...sets.asMap().entries.map((entry) {
                 final index = entry.key;
                 final set = entry.value;
 
-                return ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: CircleAvatar(
-                    radius: 14,
-                    child: Text('${index + 1}'),
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 12,
+                        backgroundColor: primaryColor.withValues(alpha: 0.15),
+                        child: Text(
+                          '${index + 1}',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: primaryColor,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          '${set.weight} kg × ${set.reps} reps',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  title: Text('${set.weight} kg × ${set.reps} reps'),
                 );
               }),
             ],

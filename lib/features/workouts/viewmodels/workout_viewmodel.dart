@@ -59,4 +59,22 @@ class WorkoutViewModel extends Notifier<List<Workout>> {
 
     state = _repository.getWorkouts();
   }
+
+  void reorderExercises(String workoutId, List<String> exercises) {
+    final workouts = state;
+    Workout? targetWorkout;
+
+    for (final workout in workouts) {
+      if (workout.id == workoutId) {
+        targetWorkout = workout;
+        break;
+      }
+    }
+
+    if (targetWorkout == null) return;
+
+    updateWorkout(
+      targetWorkout.copyWith(exercises: List<String>.from(exercises)),
+    );
+  }
 }
