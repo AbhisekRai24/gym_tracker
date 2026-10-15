@@ -18,6 +18,19 @@ class _ExerciseLibraryScreenState extends ConsumerState<ExerciseLibraryScreen> {
   final TextEditingController _searchController = TextEditingController();
 
   String _searchQuery = '';
+  String _selectedMuscleGroup = 'All';
+
+  static const List<String> muscleGroups = [
+    'All',
+    'Chest',
+    'Back',
+    'Shoulders',
+    'Triceps',
+    'Biceps',
+    'Legs',
+    'Core',
+    'Other',
+  ];
 
   @override
   void dispose() {
@@ -62,11 +75,17 @@ class _ExerciseLibraryScreenState extends ConsumerState<ExerciseLibraryScreen> {
     final primaryColor = theme.colorScheme.primary;
     final onPrimaryColor = theme.colorScheme.onPrimary;
     final isDark = theme.brightness == Brightness.dark;
-
     final filteredExercises = exercises.where((exercise) {
-      return exercise.name.toLowerCase().contains(_searchQuery.toLowerCase());
-    }).toList();
+      final matchesSearch = exercise.name.toLowerCase().contains(
+        _searchQuery.toLowerCase(),
+      );
 
+      final matchesGroup =
+          _selectedMuscleGroup == 'All' ||
+          exercise.muscleGroup == _selectedMuscleGroup;
+
+      return matchesSearch && matchesGroup;
+    }).toList();
     return Scaffold(
       appBar: AppBar(
         centerTitle: false,
@@ -142,6 +161,60 @@ class _ExerciseLibraryScreenState extends ConsumerState<ExerciseLibraryScreen> {
             ),
           ),
 
+          // Muscle group filter chips
+          SizedBox(
+            height: 42,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: muscleGroups.length,
+              itemBuilder: (context, index) {
+                final group = muscleGroups[index];
+                final isSelected = _selectedMuscleGroup == group;
+
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: ChoiceChip(
+                    label: Text(group),
+                    selected: isSelected,
+                    showCheckmark: false,
+                    selectedColor: primaryColor,
+                    backgroundColor: isDark
+                        ? const Color(0xFF1E293B)
+                        : Colors.grey.shade100,
+                    labelStyle: TextStyle(
+                      fontWeight: isSelected
+                          ? FontWeight.bold
+                          : FontWeight.normal,
+                      color: isSelected
+                          ? onPrimaryColor
+                          : theme.textTheme.bodyMedium?.color?.withValues(
+                              alpha: 0.8,
+                            ),
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(
+                        color: isSelected
+                            ? primaryColor
+                            : isDark
+                            ? Colors.white10
+                            : Colors.black12,
+                      ),
+                    ),
+                    onSelected: (_) {
+                      setState(() {
+                        _selectedMuscleGroup = group;
+                      });
+                    },
+                  ),
+                );
+              },
+            ),
+          ),  
+
+          const SizedBox(height: 8),
           // Exercise List or Empty States
           Expanded(
             child: exercisesAsync.isLoading

@@ -7,6 +7,7 @@ import '../../workouts/models/workout.dart';
 import '../../workouts/viewmodels/workout_viewmodel.dart';
 import '../../workouts/viewmodels/workout_session_viewmodel.dart';
 import '../../workouts/views/workout_session_screen.dart';
+import 'package:gym_track/features/auth/viewmodel/auth_viewmodel.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -62,7 +63,8 @@ class HomeScreen extends ConsumerWidget {
         ref.watch(workoutViewModelProvider).isLoading ||
         ref.watch(weeklyScheduleViewModelProvider).isLoading;
     final todayIndex = today.weekday % 7;
-
+    final auth = ref.watch(authViewModelProvider);
+    final username = auth.user?.username ?? 'User';
     final todayWorkoutId = schedule.workoutForDay(todayIndex);
     final todayWorkout = _findWorkout(workouts, todayWorkoutId);
 
@@ -90,14 +92,7 @@ class HomeScreen extends ConsumerWidget {
         surfaceTintColor: Colors.transparent,
         scrolledUnderElevation: 0,
         centerTitle: false,
-        title: Text(
-          'GymTrack',
-          style: TextStyle(
-            fontWeight: FontWeight.w800,
-            letterSpacing: -0.3,
-            color: palette.textPrimary,
-          ),
-        ),
+        title: Image.asset('assets/logo3.png', height: 38, fit: BoxFit.contain),
         actions: [
           IconButton(
             onPressed: () {},
@@ -113,7 +108,7 @@ class HomeScreen extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Good morning 👋',
+                'Welcome back, $username !',
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.w800,

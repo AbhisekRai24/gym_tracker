@@ -5,6 +5,7 @@ import 'package:gym_track/core/widgets/async_error_view.dart';
 import 'package:gym_track/features/workouts/viewmodels/workout_session_viewmodel.dart';
 import '../models/exercise_progress.dart';
 import '../viewmodels/progress_viewmodel.dart';
+import 'pr_lifts_screen.dart';
 
 class ProgressScreen extends ConsumerStatefulWidget {
   const ProgressScreen({super.key});
@@ -137,6 +138,36 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
                       ),
                     ),
                   ],
+                ),
+                const SizedBox(height: 16),
+
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: primaryColor,
+                      side: BorderSide(
+                        color: primaryColor.withValues(alpha: 0.5),
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const PrLiftsScreen(),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.emoji_events_rounded, size: 20),
+                    label: const Text(
+                      'My PR Lifts',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
                 ),
 
                 const SizedBox(height: 28),
