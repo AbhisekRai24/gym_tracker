@@ -1,54 +1,87 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:gym_track/features/auth/viewmodel/auth_viewmodel.dart';
 import 'package:gym_track/features/planner/repositories/weekly_schedule_repository.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 
-import '../../../core/storage/hive_boxes.dart';
 import '../models/weekly_schedule.dart';
 
-final weeklyScheduleRepositoryProvider = Provider<WeeklyScheduleRepository>((
+final _emptySchedule = WeeklySchedule(
+  workoutsByDay: {for (var day = 0; day < 7; day++) day: null},
+);
+
+// Depends on the signed-in uid. When the user changes, everything below
+// rebuilds, so one user's plan can never linger for the next one.
+final weeklyScheduleRepositoryProvider = Provider<WeeklyScheduleRepository?>((
   ref,
 ) {
-  final box = Hive.box(HiveBoxes.planner);
+  final uid = ref.watch(authViewModelProvider.select((s) => s.user?.uid));
 
-  return WeeklyScheduleRepository(box);
+  if (uid == null) return null;
+
+  return WeeklyScheduleRepository(FirebaseFirestore.instance, uid);
 });
 
 final weeklyScheduleViewModelProvider =
-    NotifierProvider<WeeklyScheduleViewModel, WeeklySchedule>(
+    StreamNotifierProvider<WeeklyScheduleViewModel, WeeklySchedule>(
       WeeklyScheduleViewModel.new,
     );
 
-class WeeklyScheduleViewModel extends Notifier<WeeklySchedule> {
-  late final WeeklyScheduleRepository _repository;
+// Plain schedule for screens that only need the data. All rest days while
+// loading, on error, or while switching users, so stale data is never shown.
+final weeklyScheduleProvider = Provider<WeeklySchedule>((ref) {
+  final async = ref.watch(weeklyScheduleViewModelProvider);
 
+  if (async.isLoading || async.hasError) return _emptySchedule;
+
+  return async.requireValue;
+});
+
+class WeeklyScheduleViewModel extends StreamNotifier<WeeklySchedule> {
   @override
-  WeeklySchedule build() {
-    _repository = ref.watch(weeklyScheduleRepositoryProvider);
+  Stream<WeeklySchedule> build() {
+    final repository = ref.watch(weeklyScheduleRepositoryProvider);
 
-    return _repository.getSchedule();
+    if (repository == null) return Stream.value(_emptySchedule);
+
+    return repository.watchSchedule();
   }
 
-  Future<void> assignWorkout(int day, String? workoutId) async {
-    await _repository.assignWorkout(day, workoutId);
+  WeeklyScheduleRepository? get _repository =>
+      ref.read(weeklyScheduleRepositoryProvider);
 
-    state = _repository.getSchedule();
+  // Swaps and removals are computed from the loaded schedule. If it has not
+  // loaded yet we do nothing, so we can never overwrite the plan with blanks.
+  bool get _isReady => !state.isLoading && !state.hasError;
+
+  Future<void> assignWorkout(int day, String? workoutId) async {
+    _repository?.saveDays({day: workoutId});
   }
 
   Future<void> clearDay(int day) async {
-    await _repository.clearDay(day);
-
-    state = _repository.getSchedule();
+    _repository?.saveDays({day: null});
   }
 
   Future<void> swapDays(int firstDay, int secondDay) async {
-    await _repository.swapDays(firstDay, secondDay);
+    if (!_isReady) return;
 
-    state = _repository.getSchedule();
+    final current = ref.read(weeklyScheduleProvider);
+
+    _repository?.saveDays({
+      firstDay: current.workoutForDay(secondDay),
+      secondDay: current.workoutForDay(firstDay),
+    });
   }
 
   Future<void> removeWorkout(String workoutId) async {
-    await _repository.removeWorkout(workoutId);
+    if (!_isReady) return;
 
-    state = _repository.getSchedule();
+    final current = ref.read(weeklyScheduleProvider);
+    final changes = <int, String?>{};
+
+    for (var day = 0; day < 7; day++) {
+      if (current.workoutForDay(day) == workoutId) changes[day] = null;
+    }
+
+    _repository?.saveDays(changes);
   }
 }

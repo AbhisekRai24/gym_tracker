@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gym_track/features/planner/viewmodels/weekly_schedule_viewmodel.dart';
 import 'package:gym_track/features/workouts/viewmodels/workout_viewmodel.dart';
+import 'package:gym_track/core/widgets/async_error_view.dart';
 
 class WeeklyPlannerScreen extends ConsumerWidget {
   const WeeklyPlannerScreen({super.key});
@@ -18,7 +19,8 @@ class WeeklyPlannerScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final schedule = ref.watch(weeklyScheduleViewModelProvider);
+    final scheduleAsync = ref.watch(weeklyScheduleViewModelProvider);
+    final schedule = ref.watch(weeklyScheduleProvider);
     final workouts = ref.watch(workoutListProvider);
     final theme = Theme.of(context);
     final primaryColor = theme.colorScheme.primary;
@@ -36,201 +38,220 @@ class WeeklyPlannerScreen extends ConsumerWidget {
           ),
         ),
       ),
-      body: ListView.separated(
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        itemCount: dayNames.length,
-        separatorBuilder: (context, index) => const SizedBox(height: 12),
-        itemBuilder: (context, index) {
-          final workoutId = schedule.workoutForDay(index);
+      body: scheduleAsync.isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : scheduleAsync.hasError
+          ? AsyncErrorView(
+              message: 'Could not load your planner.',
+              onRetry: () => ref.invalidate(weeklyScheduleViewModelProvider),
+            )
+          : ListView.separated(
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              itemCount: dayNames.length,
+              separatorBuilder: (context, index) => const SizedBox(height: 12),
+              itemBuilder: (context, index) {
+                final workoutId = schedule.workoutForDay(index);
 
-          final matchingWorkouts = workouts.where(
-            (workout) => workout.id == workoutId,
-          );
+                final matchingWorkouts = workouts.where(
+                  (workout) => workout.id == workoutId,
+                );
 
-          final workout = matchingWorkouts.isEmpty
-              ? null
-              : matchingWorkouts.first;
+                final workout = matchingWorkouts.isEmpty
+                    ? null
+                    : matchingWorkouts.first;
 
-          return DragTarget<int>(
-            onAcceptWithDetails: (details) async {
-              final draggedDay = details.data;
+                return DragTarget<int>(
+                  onAcceptWithDetails: (details) async {
+                    final draggedDay = details.data;
 
-              if (draggedDay == index) {
-                return;
-              }
+                    if (draggedDay == index) {
+                      return;
+                    }
 
-              await ref
-                  .read(weeklyScheduleViewModelProvider.notifier)
-                  .swapDays(draggedDay, index);
-            },
-            builder: (context, candidateData, rejectedData) {
-              final isHovered = candidateData.isNotEmpty;
+                    await ref
+                        .read(weeklyScheduleViewModelProvider.notifier)
+                        .swapDays(draggedDay, index);
+                  },
+                  builder: (context, candidateData, rejectedData) {
+                    final isHovered = candidateData.isNotEmpty;
 
-              return AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                decoration: BoxDecoration(
-                  color: isHovered
-                      ? primaryColor.withValues(alpha: 0.15)
-                      : isDark
-                      ? const Color(0xFF1E293B)
-                      : Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: isHovered
-                        ? primaryColor
-                        : isDark
-                        ? Colors.white10
-                        : Colors.black12,
-                    width: isHovered ? 2 : 1,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(
-                        alpha: isDark ? 0.2 : 0.05,
-                      ),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Material(
-                  color: Colors.transparent,
-                  borderRadius: BorderRadius.circular(16),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(16),
-                    onTap: () {
-                      _showWorkoutPicker(context, ref, index, workouts);
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Row(
-                        children: [
-                          // Day indicator avatar
-                          Container(
-                            width: 44,
-                            height: 44,
-                            decoration: BoxDecoration(
-                              color: workout != null
-                                  ? primaryColor.withValues(alpha: 0.15)
-                                  : (isDark
-                                        ? Colors.white10
-                                        : Colors.grey.shade100),
-                              borderRadius: BorderRadius.circular(12),
+                    return AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      decoration: BoxDecoration(
+                        color: isHovered
+                            ? primaryColor.withValues(alpha: 0.15)
+                            : isDark
+                            ? const Color(0xFF1E293B)
+                            : Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: isHovered
+                              ? primaryColor
+                              : isDark
+                              ? Colors.white10
+                              : Colors.black12,
+                          width: isHovered ? 2 : 1,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(
+                              alpha: isDark ? 0.2 : 0.05,
                             ),
-                            child: Center(
-                              child: Text(
-                                dayNames[index].substring(0, 3).toUpperCase(),
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 13,
-                                  color: workout != null
-                                      ? primaryColor
-                                      : theme.textTheme.bodySmall?.color
-                                            ?.withValues(alpha: 0.6),
-                                ),
-                              ),
-                            ),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
                           ),
-                          const SizedBox(width: 16),
-
-                          // Day name and assigned workout
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                        ],
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(16),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(16),
+                          onTap: () {
+                            _showWorkoutPicker(context, ref, index, workouts);
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Row(
                               children: [
-                                Text(
-                                  dayNames[index],
-                                  style: theme.textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  workout?.name ?? 'Rest Day',
-                                  style: theme.textTheme.bodySmall?.copyWith(
+                                // Day indicator avatar
+                                Container(
+                                  width: 44,
+                                  height: 44,
+                                  decoration: BoxDecoration(
                                     color: workout != null
-                                        ? primaryColor
-                                        : theme.textTheme.bodySmall?.color
-                                              ?.withValues(alpha: 0.5),
-                                    fontWeight: workout != null
-                                        ? FontWeight.w600
-                                        : FontWeight.normal,
+                                        ? primaryColor.withValues(alpha: 0.15)
+                                        : (isDark
+                                              ? Colors.white10
+                                              : Colors.grey.shade100),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      dayNames[index]
+                                          .substring(0, 3)
+                                          .toUpperCase(),
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13,
+                                        color: workout != null
+                                            ? primaryColor
+                                            : theme.textTheme.bodySmall?.color
+                                                  ?.withValues(alpha: 0.6),
+                                      ),
+                                    ),
                                   ),
                                 ),
+                                const SizedBox(width: 16),
+
+                                // Day name and assigned workout
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        dayNames[index],
+                                        style: theme.textTheme.titleMedium
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        workout?.name ?? 'Rest Day',
+                                        style: theme.textTheme.bodySmall
+                                            ?.copyWith(
+                                              color: workout != null
+                                                  ? primaryColor
+                                                  : theme
+                                                        .textTheme
+                                                        .bodySmall
+                                                        ?.color
+                                                        ?.withValues(
+                                                          alpha: 0.5,
+                                                        ),
+                                              fontWeight: workout != null
+                                                  ? FontWeight.w600
+                                                  : FontWeight.normal,
+                                            ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                                // Drag Handle Widget
+                                if (workout != null)
+                                  Draggable<int>(
+                                    data: index,
+                                    feedback: Material(
+                                      color: Colors.transparent,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                          vertical: 12,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: primaryColor,
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black.withValues(
+                                                alpha: 0.3,
+                                              ),
+                                              blurRadius: 12,
+                                              offset: const Offset(0, 4),
+                                            ),
+                                          ],
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              Icons.fitness_center_rounded,
+                                              color: onPrimaryColor,
+                                              size: 18,
+                                            ),
+                                            const SizedBox(width: 10),
+                                            Text(
+                                              workout.name,
+                                              style: TextStyle(
+                                                color: onPrimaryColor,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 14,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                    childWhenDragging: Icon(
+                                      Icons.drag_indicator_rounded,
+                                      color: theme.textTheme.bodySmall?.color
+                                          ?.withValues(alpha: 0.2),
+                                    ),
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(4),
+                                      child: Icon(
+                                        Icons.drag_indicator_rounded,
+                                        color: theme.textTheme.bodySmall?.color
+                                            ?.withValues(alpha: 0.4),
+                                      ),
+                                    ),
+                                  ),
                               ],
                             ),
                           ),
-
-                          // Drag Handle Widget
-                          if (workout != null)
-                            Draggable<int>(
-                              data: index,
-                              feedback: Material(
-                                color: Colors.transparent,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 12,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: primaryColor,
-                                    borderRadius: BorderRadius.circular(12),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withValues(
-                                          alpha: 0.3,
-                                        ),
-                                        blurRadius: 12,
-                                        offset: const Offset(0, 4),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        Icons.fitness_center_rounded,
-                                        color: onPrimaryColor,
-                                        size: 18,
-                                      ),
-                                      const SizedBox(width: 10),
-                                      Text(
-                                        workout.name,
-                                        style: TextStyle(
-                                          color: onPrimaryColor,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 14,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              childWhenDragging: Icon(
-                                Icons.drag_indicator_rounded,
-                                color: theme.textTheme.bodySmall?.color
-                                    ?.withValues(alpha: 0.2),
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.all(4),
-                                child: Icon(
-                                  Icons.drag_indicator_rounded,
-                                  color: theme.textTheme.bodySmall?.color
-                                      ?.withValues(alpha: 0.4),
-                                ),
-                              ),
-                            ),
-                        ],
+                        ),
                       ),
-                    ),
-                  ),
-                ),
-              );
-            },
-          );
-        },
-      ),
+                    );
+                  },
+                );
+              },
+            ),
     );
   }
 

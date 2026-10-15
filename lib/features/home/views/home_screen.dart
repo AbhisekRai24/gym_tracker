@@ -57,8 +57,10 @@ class HomeScreen extends ConsumerWidget {
     final workouts = ref.watch(workoutListProvider);
     final sessions = ref.watch(workoutSessionListProvider);
     final today = DateTime.now();
-    final schedule = ref.watch(weeklyScheduleViewModelProvider);
-
+    final schedule = ref.watch(weeklyScheduleProvider);
+    final isPlanLoading =
+        ref.watch(workoutViewModelProvider).isLoading ||
+        ref.watch(weeklyScheduleViewModelProvider).isLoading;
     final todayIndex = today.weekday % 7;
 
     final todayWorkoutId = schedule.workoutForDay(todayIndex);
@@ -123,20 +125,23 @@ class HomeScreen extends ConsumerWidget {
 
               const SizedBox(height: 20),
 
-              _TodayWorkoutCard(
-                workout: todayWorkout,
-                onStart: todayWorkout == null
-                    ? null
-                    : () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                WorkoutSessionScreen(workout: todayWorkout),
-                          ),
-                        );
-                      },
-              ),
+              isPlanLoading
+                  ? const _TodayLoadingCard()
+                  : _TodayWorkoutCard(
+                      workout: todayWorkout,
+                      onStart: todayWorkout == null
+                          ? null
+                          : () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => WorkoutSessionScreen(
+                                    workout: todayWorkout,
+                                  ),
+                                ),
+                              );
+                            },
+                    ),
 
               const SizedBox(height: 28),
 
@@ -750,6 +755,22 @@ class _StatCard extends StatelessWidget {
             style: TextStyle(fontSize: 12, color: palette.textMuted),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _TodayLoadingCard extends StatelessWidget {
+  const _TodayLoadingCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return const _SurfaceCard(
+      radius: 20,
+      padding: EdgeInsets.all(20),
+      child: SizedBox(
+        height: 96,
+        child: Center(child: CircularProgressIndicator()),
       ),
     );
   }

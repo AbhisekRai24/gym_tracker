@@ -1,55 +1,55 @@
-import 'package:hive_flutter/hive_flutter.dart';
+import 'dart:async';
 
-import '../../../core/storage/hive_boxes.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
+
 import '../models/weekly_schedule.dart';
 
 class WeeklyScheduleRepository {
-  final Box _box;
+  final FirebaseFirestore _firestore;
+  final String _uid;
 
-  WeeklyScheduleRepository(this._box);
+  WeeklyScheduleRepository(this._firestore, this._uid);
 
-  WeeklySchedule getSchedule() {
+  DocumentReference<Map<String, dynamic>> get _doc => _firestore
+      .collection('users')
+      .doc(_uid)
+      .collection('planner')
+      .doc('schedule');
+
+  Stream<WeeklySchedule> watchSchedule() {
+    return _doc.snapshots().map((snapshot) => _fromData(snapshot.data()));
+  }
+
+  // Tolerates a missing or malformed document: every day falls back to rest.
+  WeeklySchedule _fromData(Map<String, dynamic>? data) {
+    final rawDays = data?['days'];
     final schedule = <int, String?>{};
 
-    for (int day = 0; day < 7; day++) {
-      schedule[day] = _box.get(day.toString());
+    for (var day = 0; day < 7; day++) {
+      final value = rawDays is Map ? rawDays[day.toString()] : null;
+      schedule[day] = (value is String && value.isNotEmpty) ? value : null;
     }
 
     return WeeklySchedule(workoutsByDay: schedule);
   }
 
-  Future<void> assignWorkout(int day, String? workoutId) async {
-    await _box.put(day.toString(), workoutId);
-  }
+  // One merged write covers any number of days, so a swap is atomic. The
+  // write is queued offline and synced later; a failure is logged, not
+  // swallowed.
+  void saveDays(Map<int, String?> changes) {
+    if (changes.isEmpty) return;
 
-  Future<void> clearDay(int day) async {
-    await _box.delete(day.toString());
-  }
+    final days = <String, String?>{
+      for (final entry in changes.entries) entry.key.toString(): entry.value,
+    };
 
-  Future<void> swapDays(int firstDay, int secondDay) async {
-    final firstWorkout = _box.get(firstDay.toString());
-    final secondWorkout = _box.get(secondDay.toString());
-
-    if (secondWorkout == null) {
-      await _box.delete(firstDay.toString());
-    } else {
-      await _box.put(firstDay.toString(), secondWorkout);
-    }
-
-    if (firstWorkout == null) {
-      await _box.delete(secondDay.toString());
-    } else {
-      await _box.put(secondDay.toString(), firstWorkout);
-    }
-  }
-
-  Future<void> removeWorkout(String workoutId) async {
-    for (int day = 0; day < 7; day++) {
-      final scheduledWorkoutId = _box.get(day.toString());
-
-      if (scheduledWorkoutId == workoutId) {
-        await _box.delete(day.toString());
-      }
-    }
+    unawaited(
+      _doc.set({'days': days}, SetOptions(merge: true)).catchError((
+        Object error,
+      ) {
+        debugPrint('Failed to save planner: $error');
+      }),
+    );
   }
 }
