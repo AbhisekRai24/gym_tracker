@@ -1,13 +1,22 @@
+import 'dart:async';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb;
+import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 import '../model/user.dart';
 
 class AuthRepository {
   final fb.FirebaseAuth _auth;
+  final FirebaseFirestore _firestore;
   final Box _profileBox;
 
-  AuthRepository(this._auth, this._profileBox);
+  AuthRepository(this._auth, this._firestore, this._profileBox);
+
+  DocumentReference<Map<String, dynamic>> _profileDoc(String uid) {
+    return _firestore.collection('users').doc(uid);
+  }
 
   Stream<fb.User?> userChanges() => _auth.userChanges();
 
@@ -32,18 +41,60 @@ class AuthRepository {
     );
   }
 
+  // Writes are queued offline by Firestore and synced later, so we do not
+  // wait for them. Errors are logged instead of being silently dropped.
+  void _saveProfileFields(String uid, Map<String, dynamic> fields) {
+    _profileDoc(uid).set(fields, SetOptions(merge: true)).catchError((
+      Object error,
+    ) {
+      debugPrint('Profile save failed: $error');
+    });
+  }
+
+  // Creates users/{uid} if it does not exist yet (covers accounts created
+  // before this stage). Safe to call many times.
+  Future<void> ensureProfile(fb.User user) async {
+    try {
+      final doc = _profileDoc(user.uid);
+      final snapshot = await doc.get();
+
+      if (snapshot.exists) return;
+
+      final name = (user.displayName ?? '').trim();
+
+      await doc.set({
+        'email': user.email ?? '',
+        if (name.isNotEmpty) 'username': name,
+        'createdAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+    } catch (error) {
+      debugPrint('ensureProfile failed: $error');
+    }
+  }
+
   Future<void> signUp({
     required String username,
     required String email,
     required String password,
   }) async {
+    final normalizedEmail = email.trim().toLowerCase();
+
     final credential = await _auth.createUserWithEmailAndPassword(
-      email: email.trim().toLowerCase(),
+      email: normalizedEmail,
       password: password,
     );
 
-    await credential.user?.updateDisplayName(username.trim());
-    await credential.user?.reload();
+    final user = credential.user;
+    if (user == null) return;
+
+    await user.updateDisplayName(username.trim());
+    await user.reload();
+
+    _saveProfileFields(user.uid, {
+      'username': username.trim(),
+      'email': normalizedEmail,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
   }
 
   Future<void> login(String email, String password) async {
@@ -65,6 +116,8 @@ class AuthRepository {
 
     await user.updateDisplayName(newUsername.trim());
     await user.reload();
+
+    _saveProfileFields(user.uid, {'username': newUsername.trim()});
   }
 
   Future<void> updateAvatar(String uid, String path) async {

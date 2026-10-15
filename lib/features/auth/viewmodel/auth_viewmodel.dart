@@ -1,4 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart' as fb;
+import 'dart:async';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
@@ -9,10 +12,10 @@ import '../repositories/auth_repository.dart';
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
   return AuthRepository(
     fb.FirebaseAuth.instance,
+    FirebaseFirestore.instance,
     Hive.box(HiveBoxes.profile),
   );
 });
-
 enum AuthStatus { loading, signedOut, signedIn }
 
 class AuthState {
@@ -37,13 +40,14 @@ class AuthViewModel extends Notifier<AuthState> {
   @override
   AuthState build() {
     final subscription = _repository.userChanges().listen(
-      (fbUser) {
-        state = fbUser == null
-            ? const AuthState.signedOut()
-            : AuthState.signedIn(_repository.toAppUser(fbUser));
-      },
-      onError: (_) {
-        state = const AuthState.signedOut();
+        (fbUser) {
+        if (fbUser == null) {
+          state = const AuthState.signedOut();
+          return;
+        }
+
+        state = AuthState.signedIn(_repository.toAppUser(fbUser));
+        unawaited(_repository.ensureProfile(fbUser));
       },
     );
 

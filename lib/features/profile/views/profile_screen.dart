@@ -9,6 +9,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../auth/viewmodel/auth_viewmodel.dart';
 import '../../workouts/views/exercise_library_screen.dart';
 import 'edit_profile_screen.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -19,6 +20,10 @@ class ProfileScreen extends ConsumerStatefulWidget {
 
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Future<void> _pickAvatar() async {
+    if (kIsWeb) {
+      AppFeedback.info(context, 'Profile photos are not supported on web yet.');
+      return;
+    }
     final picker = ImagePicker();
 
     final image = await picker.pickImage(source: ImageSource.gallery);
@@ -33,6 +38,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(authViewModelProvider).user;
+    final avatarPath = kIsWeb ? null : user?.avatarPath;
     final theme = Theme.of(context);
     final primaryColor = theme.colorScheme.primary;
     final onPrimaryColor = theme.colorScheme.onPrimary;
@@ -71,10 +77,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         child: CircleAvatar(
                           radius: 46,
                           backgroundColor: primaryColor.withValues(alpha: 0.15),
-                          backgroundImage: user?.avatarPath != null
-                              ? FileImage(File(user!.avatarPath!))
+                          backgroundImage: avatarPath != null
+                              ? FileImage(File(avatarPath))
                               : null,
-                          child: user?.avatarPath == null
+                          child: avatarPath == null
                               ? Icon(
                                   Icons.person_rounded,
                                   size: 48,
