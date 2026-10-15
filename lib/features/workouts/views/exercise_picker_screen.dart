@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
+import 'package:gym_track/core/widgets/async_error_view.dart';
+import '../models/exercise.dart';
 import '../viewmodels/exercise_viewmodel.dart';
 import 'exercise_detail_screen.dart';
 import 'package:gym_track/core/widgets/app_feedback.dart';
@@ -28,9 +29,10 @@ class _ExercisePickerScreenState extends ConsumerState<ExercisePickerScreen> {
     'Back',
     'Shoulders',
     'Triceps',
+    'Biceps',
     'Legs',
+    'Core',
   ];
-
   @override
   void initState() {
     super.initState();
@@ -50,7 +52,10 @@ class _ExercisePickerScreenState extends ConsumerState<ExercisePickerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final exercises = ref.watch(exerciseViewModelProvider);
+    final exercisesAsync = ref.watch(exerciseViewModelProvider);
+    final exercises = (exercisesAsync.isLoading || exercisesAsync.hasError)
+        ? const <Exercise>[]
+        : exercisesAsync.requireValue;
     final theme = Theme.of(context);
     final primaryColor = theme.colorScheme.primary;
     final onPrimaryColor = theme.colorScheme.onPrimary;
@@ -175,7 +180,14 @@ class _ExercisePickerScreenState extends ConsumerState<ExercisePickerScreen> {
 
           // Exercise List View
           Expanded(
-            child: filteredExercises.isEmpty
+            child: exercisesAsync.isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : exercisesAsync.hasError
+                ? AsyncErrorView(
+                    message: 'Could not load your exercises.',
+                    onRetry: () => ref.invalidate(exerciseViewModelProvider),
+                  )
+                : filteredExercises.isEmpty
                 ? Center(
                     child: SingleChildScrollView(
                       padding: const EdgeInsets.all(32),

@@ -58,7 +58,7 @@ class AuthRepository {
       final doc = _profileDoc(user.uid);
       final snapshot = await doc.get();
 
-      if (snapshot.exists) return;
+      if (snapshot.exists && snapshot.data()?['email'] != null) return;
 
       final name = (user.displayName ?? '').trim();
 

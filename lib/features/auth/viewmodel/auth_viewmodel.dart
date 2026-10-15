@@ -16,6 +16,7 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
     Hive.box(HiveBoxes.profile),
   );
 });
+
 enum AuthStatus { loading, signedOut, signedIn }
 
 class AuthState {
@@ -39,17 +40,15 @@ class AuthViewModel extends Notifier<AuthState> {
 
   @override
   AuthState build() {
-    final subscription = _repository.userChanges().listen(
-        (fbUser) {
-        if (fbUser == null) {
-          state = const AuthState.signedOut();
-          return;
-        }
+    final subscription = _repository.userChanges().listen((fbUser) {
+      if (fbUser == null) {
+        state = const AuthState.signedOut();
+        return;
+      }
 
-        state = AuthState.signedIn(_repository.toAppUser(fbUser));
-        unawaited(_repository.ensureProfile(fbUser));
-      },
-    );
+      state = AuthState.signedIn(_repository.toAppUser(fbUser));
+      unawaited(_repository.ensureProfile(fbUser));
+    });
 
     ref.onDispose(subscription.cancel);
 

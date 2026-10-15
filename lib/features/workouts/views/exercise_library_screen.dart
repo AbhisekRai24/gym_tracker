@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gym_track/core/widgets/app_feedback.dart';
-
+import 'package:gym_track/core/widgets/async_error_view.dart';
+import '../models/exercise.dart';
 import '../viewmodels/exercise_viewmodel.dart';
 import 'add_exercise_screen.dart';
 
@@ -53,7 +54,10 @@ class _ExerciseLibraryScreenState extends ConsumerState<ExerciseLibraryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final exercises = ref.watch(exerciseViewModelProvider);
+    final exercisesAsync = ref.watch(exerciseViewModelProvider);
+    final exercises = (exercisesAsync.isLoading || exercisesAsync.hasError)
+        ? const <Exercise>[]
+        : exercisesAsync.requireValue;
     final theme = Theme.of(context);
     final primaryColor = theme.colorScheme.primary;
     final onPrimaryColor = theme.colorScheme.onPrimary;
@@ -140,7 +144,14 @@ class _ExerciseLibraryScreenState extends ConsumerState<ExerciseLibraryScreen> {
 
           // Exercise List or Empty States
           Expanded(
-            child: exercises.isEmpty
+            child: exercisesAsync.isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : exercisesAsync.hasError
+                ? AsyncErrorView(
+                    message: 'Could not load your exercises.',
+                    onRetry: () => ref.invalidate(exerciseViewModelProvider),
+                  )
+                : exercises.isEmpty
                 ? _buildEmptyState(
                     context,
                     title: 'No exercises yet',

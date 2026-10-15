@@ -5,13 +5,13 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'core/storage/hive_boxes.dart';
 import 'app/app.dart';
 import 'firebase_options.dart';
-import 'package:cloud_firestore/cloud_firestore.dart'; 
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-    FirebaseFirestore.instance.settings = const Settings(
+  FirebaseFirestore.instance.settings = const Settings(
     persistenceEnabled: true,
   );
   await Hive.initFlutter();
