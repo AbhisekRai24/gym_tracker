@@ -26,7 +26,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     super.dispose();
   }
 
-  void _saveUsername() {
+  Future<void> _saveUsername() async {
     final username = _usernameController.text.trim();
 
     if (username.isEmpty) {
@@ -36,14 +36,16 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       return;
     }
 
-    final success = ref
+    final error = await ref
         .read(authViewModelProvider.notifier)
         .updateUsername(username);
 
-    if (!success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Username is already taken')),
-      );
+    if (!mounted) return;
+
+    if (error != null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error)));
       return;
     }
 

@@ -1,6 +1,3 @@
-import 'package:crypto/crypto.dart';
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gym_track/core/widgets/app_feedback.dart';
@@ -23,6 +20,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _passwordController = TextEditingController();
 
   bool _obscurePassword = true;
+  bool _loading = false;
 
   @override
   void dispose() {
@@ -31,25 +29,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     super.dispose();
   }
 
-  String _hashPassword(String password) {
-    return sha256.convert(utf8.encode(password)).toString();
-  }
-
-  void _login() {
+  Future<void> _login() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
 
-    final email = _emailController.text.trim().toLowerCase();
-    final password = _hashPassword(_passwordController.text);
+    setState(() => _loading = true);
 
-    final success = ref
+    final error = await ref
         .read(authViewModelProvider.notifier)
-        .login(email, password);
+        .login(_emailController.text, _passwordController.text);
 
-    if (!success) {
-      AppFeedback.error(context, 'Incorrect email or password');
+    if (!mounted) return;
 
+    setState(() => _loading = false);
+
+    if (error != null) {
+      AppFeedback.error(context, error);
       return;
     }
 
@@ -158,8 +154,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: FilledButton(
-                    onPressed: _login,
-                    child: const Text('LOGIN'),
+                    onPressed: _loading ? null : _login,
+                    child: _loading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Text('LOGIN'),
                   ),
                 ),
 

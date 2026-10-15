@@ -1,10 +1,6 @@
-import 'package:crypto/crypto.dart';
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gym_track/core/widgets/app_feedback.dart';
-import 'package:gym_track/features/auth/model/user.dart';
 import 'package:gym_track/features/auth/viewmodel/auth_viewmodel.dart';
 
 class SignupScreen extends ConsumerStatefulWidget {
@@ -19,6 +15,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   final _usernameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  bool _loading = false;
 
   bool _obscurePassword = true;
 
@@ -30,34 +27,27 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     super.dispose();
   }
 
-  String _hashPassword(String password) {
-    return sha256.convert(utf8.encode(password)).toString();
-  }
-
-  void _signup() {
+  Future<void> _signup() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
 
-    final username = _usernameController.text.trim();
-    final email = _emailController.text.trim().toLowerCase();
-    final password = _passwordController.text;
+    setState(() => _loading = true);
 
-    final passwordHash = _hashPassword(password);
+    final error = await ref
+        .read(authViewModelProvider.notifier)
+        .signup(
+          username: _usernameController.text.trim(),
+          email: _emailController.text,
+          password: _passwordController.text,
+        );
 
-    final user = User(
-      username: username,
-      email: email,
-      passwordHash: passwordHash,
-    );
+    if (!mounted) return;
 
-    final success = ref.read(authViewModelProvider.notifier).signup(user);
+    setState(() => _loading = false);
 
-    if (!success) {
-      AppFeedback.error(
-        context,
-        'Username or email already exists. Please log in instead.',
-      );
+    if (error != null) {
+      AppFeedback.error(context, error);
       return;
     }
 
@@ -154,6 +144,10 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                     return 'Please enter a password';
                   }
 
+                  if (value.length < 8) {
+                    return 'Use at least 8 characters';
+                  }
+
                   return null;
                 },
               ),
@@ -163,8 +157,14 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
               SizedBox(
                 width: double.infinity,
                 child: FilledButton(
-                  onPressed: _signup,
-                  child: const Text('CREATE ACCOUNT'),
+                  onPressed: _loading ? null : _signup,
+                  child: _loading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('CREATE ACCOUNT'),
                 ),
               ),
             ],

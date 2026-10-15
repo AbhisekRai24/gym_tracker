@@ -11,12 +11,15 @@ class AuthGate extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isLoggedIn = ref.watch(authViewModelProvider);
+    final auth = ref.watch(authViewModelProvider);
 
-    if (isLoggedIn) {
-      return const DashboardScreen();
+    switch (auth.status) {
+      case AuthStatus.loading:
+        return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      case AuthStatus.signedIn:
+        return const DashboardScreen();
+      case AuthStatus.signedOut:
+        return const LoginScreen();
     }
-
-    return const LoginScreen();
   }
 }

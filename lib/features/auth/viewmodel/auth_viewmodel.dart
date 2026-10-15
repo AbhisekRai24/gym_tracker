@@ -1,83 +1,121 @@
+import 'package:firebase_auth/firebase_auth.dart' as fb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:gym_track/features/auth/model/user.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 import '../../../core/storage/hive_boxes.dart';
+import '../model/user.dart';
 import '../repositories/auth_repository.dart';
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
-  final box = Hive.box(HiveBoxes.auth);
-
-  return AuthRepository(box);
+  return AuthRepository(
+    fb.FirebaseAuth.instance,
+    Hive.box(HiveBoxes.profile),
+  );
 });
 
-final authViewModelProvider = NotifierProvider<AuthViewModel, bool>(
+enum AuthStatus { loading, signedOut, signedIn }
+
+class AuthState {
+  final AuthStatus status;
+  final AppUser? user;
+
+  const AuthState._(this.status, this.user);
+  const AuthState.loading() : this._(AuthStatus.loading, null);
+  const AuthState.signedOut() : this._(AuthStatus.signedOut, null);
+  const AuthState.signedIn(AppUser user) : this._(AuthStatus.signedIn, user);
+
+  bool get isSignedIn => status == AuthStatus.signedIn;
+}
+
+final authViewModelProvider = NotifierProvider<AuthViewModel, AuthState>(
   AuthViewModel.new,
 );
 
-class AuthViewModel extends Notifier<bool> {
-  // Read repository on demand
+class AuthViewModel extends Notifier<AuthState> {
   AuthRepository get _repository => ref.read(authRepositoryProvider);
 
   @override
-  bool build() {
-    return ref.watch(authRepositoryProvider).isLoggedIn;
+  AuthState build() {
+    final subscription = _repository.userChanges().listen(
+      (fbUser) {
+        state = fbUser == null
+            ? const AuthState.signedOut()
+            : AuthState.signedIn(_repository.toAppUser(fbUser));
+      },
+      onError: (_) {
+        state = const AuthState.signedOut();
+      },
+    );
+
+    ref.onDispose(subscription.cancel);
+
+    return const AuthState.loading();
   }
 
-  bool signup(User user) {
-    if (_repository.usernameExists(user.username) ||
-        _repository.emailExists(user.email)) {
-      return false;
+  void _refreshFromCurrentUser() {
+    final user = _repository.currentUser;
+    state = user == null
+        ? const AuthState.signedOut()
+        : AuthState.signedIn(user);
+  }
+
+  // Each action returns null on success, or a readable error message.
+
+  Future<String?> signup({
+    required String username,
+    required String email,
+    required String password,
+  }) async {
+    try {
+      await _repository.signUp(
+        username: username,
+        email: email,
+        password: password,
+      );
+      _refreshFromCurrentUser();
+      return null;
+    } catch (e) {
+      return AuthRepository.errorMessage(e);
     }
+  }
 
-    final saved = _repository.saveUser(user);
-
-    if (!saved) {
-      return false;
+  Future<String?> login(String email, String password) async {
+    try {
+      await _repository.login(email, password);
+      return null;
+    } catch (e) {
+      return AuthRepository.errorMessage(e);
     }
-
-    _repository.setLoggedIn(true);
-    state = true;
-
-    return true;
   }
 
-  bool login(String email, String passwordHash) {
-    final user = _repository.getUser();
-
-    if (user == null ||
-        user.email.toLowerCase() != email.trim().toLowerCase() ||
-        user.passwordHash != passwordHash) {
-      return false;
+  Future<String?> sendPasswordReset(String email) async {
+    try {
+      await _repository.sendPasswordReset(email);
+      return null;
+    } catch (e) {
+      return AuthRepository.errorMessage(e);
     }
-
-    _repository.setLoggedIn(true);
-    state = true;
-
-    return true;
   }
 
-  bool resetPassword(String identifier, String newPasswordHash) {
-    return _repository.resetPassword(identifier, newPasswordHash);
+  Future<void> logout() async {
+    await _repository.logout();
   }
 
-  void logout() {
-    _repository.logout();
-    state = false;
-  }
-
-  bool updateUsername(String newUsername) {
-    final success = _repository.updateUsername(newUsername);
-    if (success) {
-      // Re-trigger Riverpod notification if needed
-      ref.notifyListeners();
+  Future<String?> updateUsername(String newUsername) async {
+    try {
+      await _repository.updateUsername(newUsername);
+      _refreshFromCurrentUser();
+      return null;
+    } catch (e) {
+      return AuthRepository.errorMessage(e);
     }
-    return success;
   }
 
-  void updateAvatar(String avatarPath) {
-    _repository.updateAvatar(avatarPath);
-    // Force Riverpod to notify UI widgets watching this state to rebuild with new image
-    ref.notifyListeners();
+  Future<void> updateAvatar(String path) async {
+    final user = state.user;
+    if (user == null) return;
+
+    await _repository.updateAvatar(user.uid, path);
+    _refreshFromCurrentUser();
   }
 }

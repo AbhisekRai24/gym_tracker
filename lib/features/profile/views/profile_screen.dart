@@ -32,7 +32,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final user = ref.watch(authRepositoryProvider).getUser();
+    final user = ref.watch(authViewModelProvider).user;
     final theme = Theme.of(context);
     final primaryColor = theme.colorScheme.primary;
     final onPrimaryColor = theme.colorScheme.onPrimary;
@@ -139,8 +139,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             EditProfileScreen(currentUsername: username),
                       ),
                     );
-
-                    ref.invalidate(authRepositoryProvider);
                   },
                   style: FilledButton.styleFrom(
                     backgroundColor: primaryColor,

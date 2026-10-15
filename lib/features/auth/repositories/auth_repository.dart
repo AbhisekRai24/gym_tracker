@@ -1,111 +1,102 @@
+import 'package:firebase_auth/firebase_auth.dart' as fb;
 import 'package:hive_flutter/hive_flutter.dart';
 
 import '../model/user.dart';
 
 class AuthRepository {
-  final Box _box;
+  final fb.FirebaseAuth _auth;
+  final Box _profileBox;
 
-  AuthRepository(this._box);
+  AuthRepository(this._auth, this._profileBox);
 
-  bool get isLoggedIn => _box.get('isLoggedIn', defaultValue: false) as bool;
+  Stream<fb.User?> userChanges() => _auth.userChanges();
 
-  User? getUser() {
-    final username = _box.get('username');
-    final email = _box.get('email');
-    final passwordHash = _box.get('passwordHash');
-    final avatarPath = _box.get('avatarPath');
+  AppUser? get currentUser {
+    final user = _auth.currentUser;
+    return user == null ? null : toAppUser(user);
+  }
 
-    if (username == null || email == null || passwordHash == null) {
-      return null;
-    }
+  String _avatarKey(String uid) => 'avatar_$uid';
 
-    return User(
-      username: username as String,
-      email: email as String,
-      passwordHash: passwordHash as String,
-      avatarPath: avatarPath as String?,
+  AppUser toAppUser(fb.User user) {
+    final email = user.email ?? '';
+    final name = (user.displayName ?? '').trim();
+
+    return AppUser(
+      uid: user.uid,
+      username: name.isNotEmpty
+          ? name
+          : (email.contains('@') ? email.split('@').first : 'User'),
+      email: email,
+      avatarPath: _profileBox.get(_avatarKey(user.uid)) as String?,
     );
   }
 
-  bool usernameExists(String username) {
-    final savedUsername = _box.get('username');
+  Future<void> signUp({
+    required String username,
+    required String email,
+    required String password,
+  }) async {
+    final credential = await _auth.createUserWithEmailAndPassword(
+      email: email.trim().toLowerCase(),
+      password: password,
+    );
 
-    if (savedUsername == null) return false;
-
-    return (savedUsername as String).trim().toLowerCase() ==
-        username.trim().toLowerCase();
+    await credential.user?.updateDisplayName(username.trim());
+    await credential.user?.reload();
   }
 
-  bool emailExists(String email) {
-    final savedEmail = _box.get('email');
-
-    if (savedEmail == null) return false;
-
-    return (savedEmail as String).trim().toLowerCase() ==
-        email.trim().toLowerCase();
+  Future<void> login(String email, String password) async {
+    await _auth.signInWithEmailAndPassword(
+      email: email.trim().toLowerCase(),
+      password: password,
+    );
   }
 
-  // Save only when the username and email are not already taken.
-  // Returns false if either one belongs to the existing account.
-  bool saveUser(User user) {
-    final username = user.username.trim();
-    final email = user.email.trim().toLowerCase();
+  Future<void> sendPasswordReset(String email) {
+    return _auth.sendPasswordResetEmail(email: email.trim().toLowerCase());
+  }
 
-    if (usernameExists(username) || emailExists(email)) {
-      return false;
+  Future<void> logout() => _auth.signOut();
+
+  Future<void> updateUsername(String newUsername) async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    await user.updateDisplayName(newUsername.trim());
+    await user.reload();
+  }
+
+  Future<void> updateAvatar(String uid, String path) async {
+    await _profileBox.put(_avatarKey(uid), path);
+  }
+
+  static String errorMessage(Object error) {
+    if (error is fb.FirebaseAuthException) {
+      switch (error.code) {
+        case 'email-already-in-use':
+          return 'An account with this email already exists. Please log in instead.';
+        case 'invalid-email':
+          return 'Please enter a valid email address.';
+        case 'weak-password':
+          return 'Password is too weak. Use at least 8 characters.';
+        case 'user-disabled':
+          return 'This account has been disabled.';
+        case 'user-not-found':
+        case 'wrong-password':
+        case 'invalid-credential':
+          return 'Incorrect email or password.';
+        case 'too-many-requests':
+          return 'Too many attempts. Please wait a bit and try again.';
+        case 'network-request-failed':
+          return 'No internet connection. Check your network and try again.';
+        case 'operation-not-allowed':
+          return 'Email/password sign-in is not enabled in Firebase yet.';
+        default:
+          return 'Something went wrong (${error.code}). Please try again.';
+      }
     }
 
-    _box.put('username', username);
-    _box.put('email', email);
-    _box.put('passwordHash', user.passwordHash);
-    _box.put('avatarPath', user.avatarPath);
-
-    return true;
-  }
-
-  bool resetPassword(String identifier, String newPasswordHash) {
-    final user = getUser();
-
-    if (user == null) return false;
-
-    final normalizedIdentifier = identifier.trim().toLowerCase();
-
-    final matchesUsername =
-        user.username.trim().toLowerCase() == normalizedIdentifier;
-    final matchesEmail =
-        user.email.trim().toLowerCase() == normalizedIdentifier;
-
-    if (!matchesUsername && !matchesEmail) return false;
-
-    _box.put('passwordHash', newPasswordHash);
-    return true;
-  }
-
-  void setLoggedIn(bool value) {
-    _box.put('isLoggedIn', value);
-  }
-
-  void logout() {
-    _box.put('isLoggedIn', false);
-  }
-
-  bool updateUsername(String newUsername) {
-    final currentUser = getUser();
-
-    if (currentUser == null) return false;
-
-    final normalizedNew = newUsername.trim().toLowerCase();
-    final normalizedCurrent = currentUser.username.trim().toLowerCase();
-
-    if (usernameExists(newUsername) && normalizedCurrent != normalizedNew) {
-      return false;
-    }
-
-    _box.put('username', newUsername.trim());
-    return true;
-  }
-
-  void updateAvatar(String avatarPath) {
-    _box.put('avatarPath', avatarPath);
+    return 'Something went wrong. Please try again.';
   }
 }
