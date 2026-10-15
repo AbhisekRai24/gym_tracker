@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
+import 'package:gym_track/core/widgets/async_error_view.dart';
 import '../viewmodels/workout_session_viewmodel.dart';
 import '../viewmodels/workout_viewmodel.dart';
 import 'workout_session_detail_screen.dart';
@@ -25,13 +25,21 @@ class WorkoutHistoryScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final sessions = ref.watch(workoutSessionViewModelProvider);
+    final sessionsAsync = ref.watch(workoutSessionViewModelProvider);
+    final sessions = ref.watch(workoutSessionListProvider);
     final workouts = ref.watch(workoutListProvider);
     final history = sessions.reversed.toList();
 
     return Scaffold(
       appBar: AppBar(title: const Text('Workout History')),
-      body: sessions.isEmpty
+      body: sessionsAsync.isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : sessionsAsync.hasError
+          ? AsyncErrorView(
+              message: 'Could not load your history.',
+              onRetry: () => ref.invalidate(workoutSessionViewModelProvider),
+            )
+          : sessions.isEmpty
           ? const Center(child: Text('No completed workouts yet'))
           : ListView.builder(
               padding: const EdgeInsets.all(16),

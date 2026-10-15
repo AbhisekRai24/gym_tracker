@@ -55,8 +55,7 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final workouts = ref.watch(workoutListProvider);
-    final sessions = ref.watch(workoutSessionViewModelProvider);
-
+    final sessions = ref.watch(workoutSessionListProvider);
     final today = DateTime.now();
     final schedule = ref.watch(weeklyScheduleViewModelProvider);
 

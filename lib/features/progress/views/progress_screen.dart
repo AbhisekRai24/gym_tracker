@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gym_track/features/progress/widgets/progress_chart.dart';
-
+import 'package:gym_track/core/widgets/async_error_view.dart';
+import 'package:gym_track/features/workouts/viewmodels/workout_session_viewmodel.dart';
 import '../models/exercise_progress.dart';
 import '../viewmodels/progress_viewmodel.dart';
 
@@ -18,6 +19,7 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
   @override
   Widget build(BuildContext context) {
     final progress = ref.watch(progressViewModelProvider);
+    final sessionsAsync = ref.watch(workoutSessionViewModelProvider);
     final theme = Theme.of(context);
     final primaryColor = theme.colorScheme.primary;
     final isDark = theme.brightness == Brightness.dark;
@@ -61,7 +63,14 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
           ),
         ),
       ),
-      body: sortedProgress.isEmpty
+      body: sessionsAsync.isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : sessionsAsync.hasError
+          ? AsyncErrorView(
+              message: 'Could not load your progress.',
+              onRetry: () => ref.invalidate(workoutSessionViewModelProvider),
+            )
+          : sortedProgress.isEmpty
           ? Center(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(32),

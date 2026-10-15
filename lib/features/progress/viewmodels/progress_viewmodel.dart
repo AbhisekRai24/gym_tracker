@@ -17,8 +17,7 @@ class ProgressViewModel extends Notifier<List<ExerciseProgress>> {
   @override
   List<ExerciseProgress> build() {
     final repository = ref.watch(progressRepositoryProvider);
-    final sessions = ref.watch(workoutSessionViewModelProvider);
-
+    final sessions = ref.watch(workoutSessionListProvider);
     return repository.getExerciseProgress(sessions);
   }
 
