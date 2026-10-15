@@ -26,7 +26,7 @@ class WorkoutHistoryScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final sessions = ref.watch(workoutSessionViewModelProvider);
-    final workouts = ref.watch(workoutViewModelProvider);
+    final workouts = ref.watch(workoutListProvider);
     final history = sessions.reversed.toList();
 
     return Scaffold(

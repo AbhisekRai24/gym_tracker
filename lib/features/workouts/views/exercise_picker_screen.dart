@@ -343,17 +343,17 @@ class _ExercisePickerScreenState extends ConsumerState<ExercisePickerScreen> {
                                     ),
                                     onPressed: () {
                                       final workouts = ref.read(
-                                        workoutViewModelProvider,
+                                        workoutListProvider,
                                       );
 
-                                      final workout = workouts.firstWhere(
-                                        (workout) =>
-                                            workout.id == widget.workoutId,
+                                      final matches = workouts.where(
+                                        (w) => w.id == widget.workoutId,
                                       );
 
-                                      if (workout.exercises.contains(
-                                        exercise.name,
-                                      )) {
+                                      if (matches.isNotEmpty &&
+                                          matches.first.exercises.contains(
+                                            exercise.name,
+                                          )) {
                                         AppFeedback.info(
                                           context,
                                           '${exercise.name} is already in this workout.',

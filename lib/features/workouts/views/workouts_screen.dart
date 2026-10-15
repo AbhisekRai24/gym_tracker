@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gym_track/core/widgets/app_feedback.dart';
 import 'package:gym_track/features/planner/viewmodels/weekly_schedule_viewmodel.dart';
-
+import 'package:gym_track/core/widgets/async_error_view.dart';
 import 'package:gym_track/features/workouts/viewmodels/workout_viewmodel.dart';
 import 'package:gym_track/features/workouts/widgets/workout_card.dart';
 import 'package:gym_track/features/workouts/views/create_workout_screen.dart';
@@ -66,7 +66,8 @@ class WorkoutsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final workouts = ref.watch(workoutViewModelProvider);
+    final workoutsAsync = ref.watch(workoutViewModelProvider);
+    final workouts = ref.watch(workoutListProvider);
     final theme = Theme.of(context);
     final primaryColor = theme.colorScheme.primary;
     final onPrimaryColor = theme.colorScheme.onPrimary;
@@ -113,7 +114,14 @@ class WorkoutsScreen extends ConsumerWidget {
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
       ),
-      body: workouts.isEmpty
+      body: workoutsAsync.isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : workoutsAsync.hasError
+          ? AsyncErrorView(
+              message: 'Could not load your workouts.',
+              onRetry: () => ref.invalidate(workoutViewModelProvider),
+            )
+          : workouts.isEmpty
           ? _buildEmptyState(context, ref, primaryColor, onPrimaryColor)
           : ListView.separated(
               physics: const BouncingScrollPhysics(),

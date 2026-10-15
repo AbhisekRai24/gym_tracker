@@ -12,9 +12,23 @@ class WorkoutDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final workouts = ref.watch(workoutViewModelProvider);
+    final workoutsAsync = ref.watch(workoutViewModelProvider);
+    final workouts = ref.watch(workoutListProvider);
 
-    final workout = workouts.firstWhere((workout) => workout.id == workoutId);
+    final matches = workouts.where((w) => w.id == workoutId);
+
+    if (matches.isEmpty) {
+      return Scaffold(
+        appBar: AppBar(),
+        body: Center(
+          child: workoutsAsync.isLoading
+              ? const CircularProgressIndicator()
+              : const Text('Workout not found'),
+        ),
+      );
+    }
+
+    final workout = matches.first;
 
     final theme = Theme.of(context);
     final primaryColor = theme.colorScheme.primary;

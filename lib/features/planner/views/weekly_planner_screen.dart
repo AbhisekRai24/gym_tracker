@@ -19,8 +19,7 @@ class WeeklyPlannerScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final schedule = ref.watch(weeklyScheduleViewModelProvider);
-    final workouts = ref.watch(workoutViewModelProvider);
-
+    final workouts = ref.watch(workoutListProvider);
     final theme = Theme.of(context);
     final primaryColor = theme.colorScheme.primary;
     final onPrimaryColor = theme.colorScheme.onPrimary;
