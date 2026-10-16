@@ -81,7 +81,9 @@ class _PrLiftsScreenState extends ConsumerState<PrLiftsScreen> {
     }
 
     final records = bestByName.entries
-        .map((entry) => _PrRecord(entry.value, muscleByName[entry.key] ?? 'Other'))
+        .map(
+          (entry) => _PrRecord(entry.value, muscleByName[entry.key] ?? 'Other'),
+        )
         .toList();
 
     records.sort(

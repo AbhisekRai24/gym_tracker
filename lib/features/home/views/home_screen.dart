@@ -65,6 +65,7 @@ class HomeScreen extends ConsumerWidget {
     final todayIndex = today.weekday % 7;
     final auth = ref.watch(authViewModelProvider);
     final username = auth.user?.username ?? 'User';
+    final avatarBytes = ref.watch(avatarBytesProvider).value;
     final todayWorkoutId = schedule.workoutForDay(todayIndex);
     final todayWorkout = _findWorkout(workouts, todayWorkoutId);
 
@@ -94,9 +95,24 @@ class HomeScreen extends ConsumerWidget {
         centerTitle: false,
         title: Image.asset('assets/logo3.png', height: 38, fit: BoxFit.contain),
         actions: [
-          IconButton(
-            onPressed: () {},
-            icon: Icon(Icons.person_outline, color: palette.textPrimary),
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: CircleAvatar(
+              radius: 18,
+              backgroundColor: Theme.of(
+                context,
+              ).colorScheme.primary.withValues(alpha: 0.15),
+              backgroundImage: avatarBytes != null
+                  ? MemoryImage(avatarBytes)
+                  : null,
+              child: avatarBytes == null
+                  ? Icon(
+                      Icons.person_outline,
+                      size: 20,
+                      color: palette.textPrimary,
+                    )
+                  : null,
+            ),
           ),
         ],
       ),

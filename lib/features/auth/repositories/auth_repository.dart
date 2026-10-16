@@ -1,5 +1,6 @@
 import 'dart:async';
-
+import 'dart:convert';
+import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb;
 import 'package:flutter/foundation.dart';
@@ -41,14 +42,37 @@ class AuthRepository {
     );
   }
 
+  Stream<AppUser> profileChanges(fb.User user) {
+    return _profileDoc(user.uid).snapshots().map((snapshot) {
+      final data = snapshot.data() ?? {};
+
+      final firestoreUsername = (data['username'] as String? ?? '').trim();
+
+      final authUsername = (user.displayName ?? '').trim();
+      final email = user.email ?? '';
+
+      final username = firestoreUsername.isNotEmpty
+          ? firestoreUsername
+          : authUsername.isNotEmpty
+          ? authUsername
+          : (email.contains('@') ? email.split('@').first : 'User');
+
+      return AppUser(
+        uid: user.uid,
+        username: username,
+        email: (data['email'] as String?) ?? email,
+        avatarPath: _profileBox.get(_avatarKey(user.uid)) as String?,
+      );
+    });
+  }
+
   // Writes are queued offline by Firestore and synced later, so we do not
   // wait for them. Errors are logged instead of being silently dropped.
-  void _saveProfileFields(String uid, Map<String, dynamic> fields) {
-    _profileDoc(uid).set(fields, SetOptions(merge: true)).catchError((
-      Object error,
-    ) {
-      debugPrint('Profile save failed: $error');
-    });
+  Future<void> _saveProfileFields(
+    String uid,
+    Map<String, dynamic> fields,
+  ) async {
+    await _profileDoc(uid).set(fields, SetOptions(merge: true));
   }
 
   // Creates users/{uid} if it does not exist yet (covers accounts created
@@ -114,14 +138,37 @@ class AuthRepository {
     final user = _auth.currentUser;
     if (user == null) return;
 
-    await user.updateDisplayName(newUsername.trim());
-    await user.reload();
+    final username = newUsername.trim();
 
-    _saveProfileFields(user.uid, {'username': newUsername.trim()});
+    await user.updateDisplayName(username);
+
+    await _saveProfileFields(user.uid, {'username': username});
   }
 
   Future<void> updateAvatar(String uid, String path) async {
     await _profileBox.put(_avatarKey(uid), path);
+  }
+
+  // Live avatar image bytes for this user (null when none is set).
+  Stream<Uint8List?> watchAvatar(String uid) {
+    return _profileDoc(uid).snapshots().map((snapshot) {
+      final raw = snapshot.data()?['avatarBase64'];
+      if (raw is! String || raw.isEmpty) return null;
+
+      try {
+        return base64Decode(raw);
+      } catch (_) {
+        return null;
+      }
+    });
+  }
+
+  void saveAvatar(String uid, Uint8List bytes) {
+    _saveProfileFields(uid, {'avatarBase64': base64Encode(bytes)});
+  }
+
+  void removeAvatar(String uid) {
+    _saveProfileFields(uid, {'avatarBase64': FieldValue.delete()});
   }
 
   static String errorMessage(Object error) {

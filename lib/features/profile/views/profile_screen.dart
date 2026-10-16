@@ -1,5 +1,4 @@
-import 'dart:io';
-
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gym_track/core/widgets/app_feedback.dart';
@@ -20,25 +19,49 @@ class ProfileScreen extends ConsumerStatefulWidget {
 
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Future<void> _pickAvatar() async {
-    if (kIsWeb) {
-      AppFeedback.info(context, 'Profile photos are not supported on web yet.');
-      return;
-    }
     final picker = ImagePicker();
 
-    final image = await picker.pickImage(source: ImageSource.gallery);
+    final image = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 256,
+      maxHeight: 256,
+      imageQuality: 70,
+    );
 
     if (image == null) {
       return;
     }
 
-    ref.read(authViewModelProvider.notifier).updateAvatar(image.path);
+    final Uint8List bytes = await image.readAsBytes();
+
+    if (!mounted) return;
+
+    if (bytes.length > 150000) {
+      AppFeedback.error(context, 'That photo is too large. Try a smaller one.');
+      return;
+    }
+
+    ref.read(authViewModelProvider.notifier).saveAvatar(bytes);
+  }
+
+  Future<void> _removeAvatar() async {
+    final shouldRemove = await AppFeedback.confirm(
+      context,
+      title: 'Remove photo?',
+      message: 'Your profile photo will be removed.',
+      confirmText: 'Remove',
+      destructive: true,
+    );
+
+    if (!shouldRemove || !mounted) return;
+
+    ref.read(authViewModelProvider.notifier).removeAvatar();
   }
 
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(authViewModelProvider).user;
-    final avatarPath = kIsWeb ? null : user?.avatarPath;
+    final avatarBytes = ref.watch(avatarBytesProvider).value;
     final theme = Theme.of(context);
     final primaryColor = theme.colorScheme.primary;
     final onPrimaryColor = theme.colorScheme.onPrimary;
@@ -65,6 +88,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               children: [
                 GestureDetector(
                   onTap: _pickAvatar,
+                  onLongPress: avatarBytes == null ? null : _removeAvatar,
                   child: Stack(
                     alignment: Alignment.bottomRight,
                     children: [
@@ -77,10 +101,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         child: CircleAvatar(
                           radius: 46,
                           backgroundColor: primaryColor.withValues(alpha: 0.15),
-                          backgroundImage: avatarPath != null
-                              ? FileImage(File(avatarPath))
+                          backgroundImage: avatarBytes != null
+                              ? MemoryImage(avatarBytes)
                               : null,
-                          child: avatarPath == null
+                          child: avatarBytes == null
                               ? Icon(
                                   Icons.person_rounded,
                                   size: 48,

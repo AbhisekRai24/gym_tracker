@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
+import '../models/exercise.dart';
+import '../viewmodels/exercise_viewmodel.dart';
 import '../viewmodels/workout_viewmodel.dart';
 import 'exercise_picker_screen.dart';
 import 'workout_session_screen.dart';
@@ -29,6 +30,12 @@ class WorkoutDetailScreen extends ConsumerWidget {
     }
 
     final workout = matches.first;
+    final libraryExercises =
+        ref.watch(exerciseViewModelProvider).value ?? const <Exercise>[];
+
+    final exerciseByName = <String, Exercise>{
+      for (final item in libraryExercises) item.name.trim().toLowerCase(): item,
+    };
 
     final theme = Theme.of(context);
     final primaryColor = theme.colorScheme.primary;
@@ -119,6 +126,64 @@ class WorkoutDetailScreen extends ConsumerWidget {
               physics: const BouncingScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 160),
               buildDefaultDragHandles: false,
+              proxyDecorator: (child, index, animation) {
+                final name = index < workout.exercises.length
+                    ? workout.exercises[index]
+                    : '';
+
+                return AnimatedBuilder(
+                  animation: animation,
+                  builder: (context, _) {
+                    final t = Curves.easeOut.transform(animation.value);
+
+                    return Transform.scale(
+                      scale: 1 + (0.03 * t),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 14,
+                          ),
+                          decoration: BoxDecoration(
+                            color: primaryColor,
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.3 * t),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.fitness_center_rounded,
+                                color: onPrimaryColor,
+                                size: 18,
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  name,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: onPrimaryColor,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
               itemCount: workout.exercises.length,
               onReorder: (oldIndex, newIndex) {
                 if (newIndex > oldIndex) {
@@ -135,6 +200,7 @@ class WorkoutDetailScreen extends ConsumerWidget {
               },
               itemBuilder: (context, index) {
                 final exercise = workout.exercises[index];
+                final details = exerciseByName[exercise.trim().toLowerCase()];
 
                 return Container(
                   key: ValueKey(exercise),
@@ -183,13 +249,38 @@ class WorkoutDetailScreen extends ConsumerWidget {
                           const SizedBox(width: 14),
 
                           // Exercise title
+                          // Exercise title and tags
                           Expanded(
-                            child: Text(
-                              exercise,
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: -0.2,
-                              ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  exercise,
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: -0.2,
+                                  ),
+                                ),
+                                if (details != null) ...[
+                                  const SizedBox(height: 6),
+                                  Wrap(
+                                    spacing: 6,
+                                    runSpacing: 4,
+                                    children: [
+                                      _buildBadge(
+                                        details.muscleGroup,
+                                        primaryColor,
+                                      ),
+                                      _buildBadge(
+                                        details.equipment,
+                                        theme.textTheme.bodySmall?.color
+                                                ?.withValues(alpha: 0.6) ??
+                                            Colors.grey,
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ],
                             ),
                           ),
 
@@ -283,6 +374,24 @@ class WorkoutDetailScreen extends ConsumerWidget {
                 ),
               ],
             ),
+    );
+  }
+
+  Widget _buildBadge(String text, Color accentColor) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: accentColor.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: accentColor,
+        ),
+      ),
     );
   }
 }

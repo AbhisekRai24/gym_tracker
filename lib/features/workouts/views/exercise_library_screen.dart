@@ -212,7 +212,7 @@ class _ExerciseLibraryScreenState extends ConsumerState<ExerciseLibraryScreen> {
                 );
               },
             ),
-          ),  
+          ),
 
           const SizedBox(height: 8),
           // Exercise List or Empty States
